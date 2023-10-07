@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # Ignoring specific large files
-normalisation/en_floret_model/vocab/vectors
+normalisation/en_floret_model/*
 
 # Ignoring all .index and .pkl files
 *.index
