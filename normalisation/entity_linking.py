@@ -10,6 +10,8 @@ nlp = spacy.load("/home/stirunag/work/github/CAPITAL/normalisation/en_floret_mod
 # Define mapping of annotation type to corresponding file paths
 file_mapping = {
     'CD': ('chebi_terms.index', 'chebi_terms.pkl'),
+    'CHEBI': ('chebi_terms.index', 'chebi_terms.pkl'),
+    'SO': ('so_terms.index', 'so_terms.pkl'),
     'OG': ('NCBI_terms.index', 'NCBI_terms.pkl'),
     'DS': ('umls_terms.index', 'umls_terms.pkl'),
     'GP': ('uniprot_terms.index', 'uniprot_terms.pkl')
