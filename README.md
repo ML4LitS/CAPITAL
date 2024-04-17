@@ -25,6 +25,13 @@ git clone https://github.com/ML4LitS/CAPITAL.git
 cd CAPITAL
 pip install -r requirements.txt
 ```
+## Floret model
+
+https://drive.google.com/drive/folders/158y1pd72iI1eXWw4gDSqHUoaJQ367vbP?usp=drive_link
+
+## Indexed KB data
+
+https://drive.google.com/drive/folders/1vnFBUj4dbhc6EGxObDVJpPaYo5tzqxbo?usp=drive_link
 
 ## Usage
 
@@ -33,7 +40,7 @@ Here's how to use the package to link entities:
 1. **Load the necessary models and data:**
    ```python
    from entity_linker import EntityLinker
-   linker = EntityLinker(base_path="/path/to/your/data")
+   linker = EntityLinker(base_path="/path/to/your/index_data")
    ```
 
 2. **Link entities:**

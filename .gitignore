@@ -9,7 +9,6 @@ normalisation/en_floret_model/*
 # Ignoring all .index and .pkl files
 *.index
 *.pkl
-*.txt
 vectors
 
 
@@ -19,6 +18,7 @@ vectors
 # Distribution / packaging
 .Python
 build/
+normalisation/
 develop-eggs/
 dist/
 downloads/
