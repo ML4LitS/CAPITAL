@@ -1,62 +1,79 @@
 # CAPITAL: Contextual Annotations PIpeline for TAgging and Linking
 
-## Replace dictionary text mining in Europe PMC with Machine Learning based annotations
-
-The project aims to replace the existing dictionary text mining approach with a machine learning-based solution. 
-This shift is expected to improve the efficiency and accuracy of information extraction from resources. 
-The project is divided into several tasks to be completed over multiple phases.
-
-By replacing the existing dictionary text mining with machine learning, the project aims to enhance the overall efficiency, accuracy, and effectiveness of information extraction from resources. 
-The successful implementation of this project is expected to have a positive impact on the Europe PMCs data processing capabilities and ultimately improve the quality of the Annotations.
-
-
-### Objectives:
-1. Implemement deep learning models for entity recognition
-	The entity tagging project is available at https://github.com/ML4LitS/annotation_models
-2. Implement entity linking tool which links the entities recognised to a knowledgebase.
-	This repository aims to achieve this objective
-	
-
-This repository presents a linking strategy for various biological and medical knowledge bases, including UMLS (Diseases), UniProt (Genes/Proteins), NCBI Taxonomy (Organisms), and ChEBI (Chemicals).
-
 ## Description
-Our strategy extracts terms and IDs from the provided knowledge bases and integrates them into a unified dictionary. This allows for easier cross-referencing and searching across various datasets.
+
+This package facilitates entity linking by using embeddings to represent terms from various knowledge bases. The core functionality includes generating embeddings, indexing these embeddings with the Facebok's FAISS library, and conducting entity searches with both semantic and fuzzy matching.
 
 ## Features
-UMLS Linking: Extract terms and IDs related to diseases.
-UniProt Linking: Extract terms and IDs related to genes and proteins.
-NCBI Taxonomy Linking: Extract terms and IDs for organisms.
-ChEBI Linking: Extract terms and IDs for chemicals.
+
+- **Embedding Generation:** Utilises floret embeddings trained on Europe PMC's open access content for contextual understanding of biomedical terms. We have also provided a notebook where we implemented the use any of huggingface models to generate embeddings.
+- **FAISS Indexing:** Implements efficient vector indexing to enable rapid and precise searching.
+- **Fuzzy Matching:** Enhances matching accuracy by comparing query terms against indexed terms using a fuzzy logic.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+- Python 3.7 or higher
+- Dependencies installed from the `requirements.txt` file
 
 ## Installation
 
-## Requirements
-Python 3.7+
-Required libraries (these can be installed using pip):
-tqdm
-[Other required libraries...]
+Clone the repository and install the necessary dependencies:
 
-## Steps
-Clone the repository:
-
-git clone [Repository URL]
-cd [Repository Name]
-
-### Install the required libraries:
-
+```bash
+git clone https://github.com/ML4LitS/CAPITAL.git
+cd CAPITAL
 pip install -r requirements.txt
+```
 
+## Usage
 
+Here's how to use the package to link entities:
 
+1. **Load the necessary models and data:**
+   ```python
+   from entity_linker import EntityLinker
+   linker = EntityLinker(base_path="/path/to/your/data")
+   ```
 
-## Documentation
-Detailed documentation for each module can be found here.
+2. **Link entities:**
+   ```python
+   terms = ['hypertension', 'covid-19', 'Coronavirus disease']
+   annotation_type = 'DS'  # Disease
+   results = linker.link_entities(terms, annotation_type)
+   print(results)
+   ```
+
+## Data Structure
+
+Ensure the following structure in your data directory for indexed embeddings and metadata:
+
+- `chebi_terms.index`
+- `chebi_terms.pkl`
+- `NCBI_terms.index`
+- `NCBI_terms.pkl`
+- `umls_terms.index`
+- `umls_terms.pkl`
+- `uniprot_terms.index`
+- `uniprot_terms.pkl`
+
+## Customise for your Knowledgebase
+
+Use the following notebook tutoriaLs to generate your custom entity linkers:
+
+In this example we have used bio assay ontology (BAO)
+
+Using Sentence Tranformers:
+https://github.com/ML4LitS/CAPITAL/blob/main/notebooks/normalisation%20analysis/Testing%20with%20Sbert.ipynb
+
+Using Floret Embeddings:
+https://github.com/ML4LitS/CAPITAL/blob/main/notebooks/normalisation%20analysis/BAO.ipynb
 
 ## Contributing
-We welcome contributions! Please read our CONTRIBUTING guide to get started.
+
+Contributions to improve the software are welcome. Please fork the repository and submit pull requests with your enhancements.
 
 ## License
-[CC-by 4]
 
-
+This project is licensed under the MIT License - see the LICENSE file for details.
  
