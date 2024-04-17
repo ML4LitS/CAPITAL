@@ -75,4 +75,4 @@ def preprocess_and_index(term_id_dict, output_pickle_filename, output_list, fais
         for term in term_id_dict.keys():
             txt_file.write(term + "\n")
 
-# You can then import and use preprocess_and_index function by passing the dictionary of terms and IDs.
+# You can then import indexing.py and use preprocess_and_index function by passing the dictionary of terms and IDs.
