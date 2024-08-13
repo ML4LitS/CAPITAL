@@ -1,0 +1,163 @@
+ner_method,bao_term,bao_link,partial_match
+2D-PAGE ANALYSIS,PAGE,http://www.bioassayontology.org/bao#BAO_0010019,False
+AGAR MICRODILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+ALAMARBLUE ASSAY,alamarBlue,http://www.bioassayontology.org/bao#BAO_0100002,False
+ALU-LTR PCR PROTOCOL BASED METHOD,real-time PCR ,http://www.bioassayontology.org/bao#BAO_0002084,False
+AMBIT BINDING ASSAY,binding assay,http://www.bioassayontology.org/bao#BAO_0002989,True
+ANNEXIN V-FITC AND PI STAINING BASED FLOW CYTOMETRY,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V-FITC AND PI STAINING BASED FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V-FITC AND PI STAINING BASED FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE BASED FLOW CYTOMETRY,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE BASED FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE BASED FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BASED FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BASED FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BASED FLOW CYTOMETRY,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BASED FLOW CYTOMETRY ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BASED FLOW CYTOMETRY ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BASED FLOW CYTOMETRY ANALYSIS,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BY FACS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BY FACS,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING BY FACS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRIC ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRIC ANALYSIS,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V-FITC/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRIC ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V/PI STAINING-BASED FACS ANALYSIS,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V/PI STAINING-BASED FACS ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V/PI STAINING-BASED FACS ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN V/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRIC ANALYSIS,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN V/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRIC ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN V/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRIC ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN-V FITC/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+ANNEXIN-V FITC/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN-V FITC/PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRY,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN-V/PROPIDIUM IODIDE DOUBLE STAINING BASED FLOW CYTOMETRY,Annexin V apoptosis assay,http://www.bioassayontology.org/bao#BAO_0010265,True
+ANNEXIN-V/PROPIDIUM IODIDE DOUBLE STAINING BASED FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+ANNEXIN-V/PROPIDIUM IODIDE DOUBLE STAINING BASED FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+BETA COUNTING ANALYSIS,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+BETA LIQUID SCINTILLATION COUNTING,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,False
+BROTH DILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+BROTH MACRODILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+BROTH MICRODILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+CALCIUM MOBILIZATION,calcium redistribution assay,http://www.bioassayontology.org/bao#BAO_0000649,False
+CELL TITER BLUE ASSAY,CellTiter-Blue Cell Viability Assay (Promega),http://www.bioassayontology.org/bao#BAO_0140012,False
+CELL TITER-GLO LUMINESCENCE ASSAY,CellTiter-Glo Luminescent Cell Viability Assay,http://www.bioassayontology.org/bao#BAO_0000682,False
+CELLTITER-BLUE VIABILITY ASSAY,CellTiter-Blue Cell Viability Assay (Promega),http://www.bioassayontology.org/bao#BAO_0140012,False
+CHROMATIN IMMUNOPRECIPITATION ASSAY,global chromatin epigenetic profiling assay,http://www.bioassayontology.org/bao#BAO_0010039,True
+CHROMATIN IMMUNOPRECIPITATION ASSAY,immunoprecipitation,http://www.bioassayontology.org/bao#BAO_0002508,True
+CIRCULAR DICHROISM METHOD,circular dichroism,http://www.bioassayontology.org/bao#BAO_0000161,False
+CLSI 2-FOLD AGAR DILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+CLSI M27-A2 BROTH MICRODILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+CLSI-BASED BROTH MICRODILUTION ASSAY,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+CMV-GFP REPORTER ASSAY METHOD,fluorescent protein reporter gene assay,http://www.bioassayontology.org/bao#BAO_0003012,False
+COMPETITION BINDING ASSAY,binding assay,http://www.bioassayontology.org/bao#BAO_0002989,True
+COMPETITIVE BINDING BASED FLUORESCENCE POLARIZATION,fluorescence polarization,http://www.bioassayontology.org/bao#BAO_0000003,True
+CONTINUOUS TR-FRET ASSAY,time resolved fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000004,True
+COOMASSIE BLUE STAINING BASED,Coomassie dye protein staining,http://www.bioassayontology.org/bao#BAO_0002464,False
+CRYSTAL VIOLET STAINING BASED ASSAY,crystal violet staining,http://www.bioassayontology.org/bao#BAO_0002468,False
+CRYSTAL VIOLET STAINING-BASED POLYSTYRENE MICROTITER PLATE READER METHOD,crystal violet staining,http://www.bioassayontology.org/bao#BAO_0002468,False
+CYTOM,quantitative reverse transcription PCR,http://www.bioassayontology.org/bao#BAO_0002090,False
+DECREASE IN ABSORBANCE,absorbance,http://www.bioassayontology.org/bao#BAO_0000070,False
+ELISA,ELISA,http://www.bioassayontology.org/bao#BAO_0000134,False
+ETHIDIUM DISPLACEMENT ASSAY,ethidium bromide DNA staining,http://www.bioassayontology.org/bao#BAO_0002474,True
+FACS ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,False
+FILTER BINDING ASSAY,filter assay,http://www.bioassayontology.org/bao#BAO_0000401,True
+FILTER BINDING METHOD,binding assessment method,http://www.bioassayontology.org/bao#BAO_0000123,True
+FILTER BINDING METHOD,radioligand binding method,http://www.bioassayontology.org/bao#BAO_0000402,True
+FILTER-BINDING ASSAY,filter assay,http://www.bioassayontology.org/bao#BAO_0000401,True
+FLIPR ASSAY,FLIPR Membrane Potential Assay Kit,http://www.bioassayontology.org/bao#BAO_0003088,False
+FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,False
+FLUORESCENCE POLARIZATION ASSAY,fluorescence polarization,http://www.bioassayontology.org/bao#BAO_0000003,False
+FLUORESCENCE TITRATION ANALYSIS,titration method,http://www.bioassayontology.org/bao#BAO_0002413,True
+FP ASSAY,fluorescence polarization,http://www.bioassayontology.org/bao#BAO_0000003,False
+FRET ANALYSIS,fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000001,False
+FRET ASSAY,fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000001,False
+FRET-BASED ASSAY,fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000001,False
+FRET-MELTING,fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000001,True
+GAMMA-COUNTING METHOD,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+H2DCF DIACETATE-BASED FLOW CYTOMETRIC ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,False
+HOECHST 33258 STAINING BY FLUORESCENCE MICROSCOPIC ANALYSIS,fluorescence microscopy,http://www.bioassayontology.org/bao#BAO_0000450,True
+HOECHST 33258 STAINING BY FLUORESCENCE MICROSCOPIC ANALYSIS,Hoechst,http://www.bioassayontology.org/bao#BAO_0000116,True
+HSQC NMR-BASED TITRATION METHOD,titration method,http://www.bioassayontology.org/bao#BAO_0002413,True
+IMAP TR-FRET ASSAY,time resolved fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000004,True
+IMMUNOBLOTTING ANALYSIS,immunoassay,http://www.bioassayontology.org/bao#BAO_0000129,False
+INTACT PROTEIN MASS SPECTROMETRY,mass spectrometry,http://www.bioassayontology.org/bao#BAO_0000055,True
+INTRACELLULAR CALCIUM RELEASE,calcium redistribution assay,http://www.bioassayontology.org/bao#BAO_0000649,False
+KINOMESCAN ASSAY,KINOMEScan assay,http://www.bioassayontology.org/bao#BAO_0003011,False
+KINOMESCAN METHOD,KINOMEScan assay,http://www.bioassayontology.org/bao#BAO_0003011,False
+KINOMESCAN SCANMAX ASSAY,KINOMEScan assay,http://www.bioassayontology.org/bao#BAO_0003011,True
+LANTHASCREEN TR-FRET ASSAY,time resolved fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000004,True
+LIGHT TRANSMITTANCE METHOD,transmittance,http://www.bioassayontology.org/bao#BAO_0000071,False
+LIQUID SCINTILLATION COUNTING,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+LIQUID SCINTILLATION COUNTING ANALYSIS,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+LIQUID SCINTILLATION COUNTING METHOD,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+LOWRY METHOD,Lowry assay,http://www.bioassayontology.org/bao#BAO_0002465,False
+LUCIFERASE ASSAY,luciferase reporter gene assay,http://www.bioassayontology.org/bao#BAO_0002661,False
+LUCIFERASE REPORTER ASSAY,luciferase reporter gene assay,http://www.bioassayontology.org/bao#BAO_0002661,False
+LUCIFERASE REPORTER GENE ASSAY,luciferase reporter gene assay,http://www.bioassayontology.org/bao#BAO_0002661,False
+MASS SPECTROMETRY BASED BROMOSPHERE CHEMOPROTEOMIC ASSAY,mass spectrometry,http://www.bioassayontology.org/bao#BAO_0000055,True
+MASS SPECTROMETRY BASED KINAFFINITY ASSAY,mass spectrometry,http://www.bioassayontology.org/bao#BAO_0000055,True
+MASS SPECTROMETRY BASED PULL DOWN ASSAY,mass spectrometry,http://www.bioassayontology.org/bao#BAO_0000055,True
+MICROARRAY ANALYSIS,Microarray,http://www.bioassayontology.org/bao#BAO_0010048,False
+MICROARRAY BASED TRANSCRIPTIONAL PROFILING,Microarray,http://www.bioassayontology.org/bao#BAO_0010048,False
+MICROBETA SCINTILLATION COUNTING ANALYSIS,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+MICROBETA SCINTILLATION COUNTING METHOD,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+MICROBETA TRILUX BASED LUMINESCENCE ANALYSIS,luminescence method,http://www.bioassayontology.org/bao#BAO_0000045,True
+MICRODILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+MICROSCOPIC ANALYSIS,microscopy,http://www.bioassayontology.org/bao#BAO_0002526,False
+MS/MS ANALYSIS,mass spectrometry,http://www.bioassayontology.org/bao#BAO_0000055,False
+MTT ASSAY,MTT reduction assay,http://www.bioassayontology.org/bao#BAO_0002457,False
+NCCLS BROTH MICRODILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+PI STAINING BASED FLOW CYTOMETRY ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+PI STAINING BASED FLOW CYTOMETRY ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+PROPIDIUM IODIDE STAINING BY FACS ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+PROPIDIUM IODIDE STAINING BY FACS ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+PROPIDIUM IODIDE STAINING FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+PROPIDIUM IODIDE STAINING FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+PROPIDIUM IODIDE STAINING-BASED FACS ANALYSIS,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+PROPIDIUM IODIDE STAINING-BASED FACS ANALYSIS,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRY,propidium iodide DNA staining,http://www.bioassayontology.org/bao#BAO_0002476,True
+PROPIDIUM IODIDE STAINING-BASED FLOW CYTOMETRY,flow cytometry,http://www.bioassayontology.org/bao#BAO_0000005,True
+QRT-PCR ANALYSIS,quantitative PCR,http://www.bioassayontology.org/bao#BAO_0003031,True
+QRT-PCR ANALYSIS,quantitative reverse transcription PCR,http://www.bioassayontology.org/bao#BAO_0002090,False
+QRT-PCR METHOD,quantitative reverse transcription PCR,http://www.bioassayontology.org/bao#BAO_0002090,False
+RADIO-LIGAND BINDING ASSAY,binding assay,http://www.bioassayontology.org/bao#BAO_0002989,True
+RADIOACTIVE FILTER BINDING ASSAY,filter assay,http://www.bioassayontology.org/bao#BAO_0000401,True
+RADIOISOTOPE-BASED FILTER BINDING ASSAY,filter assay,http://www.bioassayontology.org/bao#BAO_0000401,True
+RADIOLIGAND BINDING ASSAY,radioligand binding assay,http://www.bioassayontology.org/bao#BAO_0002776,False
+RADIOLIGAND COMPETITION BINDING ASSAY,radioligand binding method,http://www.bioassayontology.org/bao#BAO_0000402,True
+RADIOLIGAND COMPETITION BINDING ASSAY,radioligand binding assay,http://www.bioassayontology.org/bao#BAO_0002776,True
+RADIOLIGAND COMPETITIVE ASSAY,radioligand binding assay,http://www.bioassayontology.org/bao#BAO_0002776,False
+RADIOLIGAND COMPETITIVE ASSAY,radioligand binding method,http://www.bioassayontology.org/bao#BAO_0000402,False
+RADIOLIGAND DISPLACEMENT ASSAY,radioligand binding method,http://www.bioassayontology.org/bao#BAO_0000402,False
+RADIOLIGAND DISPLACEMENT ASSAY,radioligand binding assay,http://www.bioassayontology.org/bao#BAO_0002776,False
+RADIOMETRIC FILTER-BINDING ASSAY,filter assay,http://www.bioassayontology.org/bao#BAO_0000401,True
+REAL-TIME PCR ANALYSIS,quantitative reverse transcription PCR,http://www.bioassayontology.org/bao#BAO_0002090,False
+RESAZURIN DYE BASED ASSAY,resazurin reduction assay,http://www.bioassayontology.org/bao#BAO_0002459,False
+RESAZURIN MICROPLATE ASSAY,resazurin reduction assay,http://www.bioassayontology.org/bao#BAO_0002459,False
+RESAZURIN-DYE BASED FLUORESCENCE ASSAY,resazurin reduction assay,http://www.bioassayontology.org/bao#BAO_0002459,False
+RT-PCR ANALYSIS,quantitative reverse transcription PCR,http://www.bioassayontology.org/bao#BAO_0002090,False
+SCINTILLATION COUNTING,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,False
+SCINTILLATION COUNTING ANALYSIS,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,False
+SERIAL DILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+SERIAL SUBCULTIVATION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+SPECTROPHOTOMETRIC ANALYSIS,spectrophotometry method,http://www.bioassayontology.org/bao#BAO_0000049,False
+SPR ANALYSIS,surface plasmon resonance,http://www.bioassayontology.org/bao#BAO_0000054,False
+SPR METHOD,surface plasmon resonance,http://www.bioassayontology.org/bao#BAO_0000054,False
+SRB ASSAY,sulforhodamine B staining,http://www.bioassayontology.org/bao#BAO_0002460,False
+SULFORHODAMINE B ASSAY,sulforhodamine B staining,http://www.bioassayontology.org/bao#BAO_0002460,False
+SULFORHODAMINE B ASSAY ,sulforhodamine B staining,http://www.bioassayontology.org/bao#BAO_0002460,False
+SURFACE PLASMON RESONANCE ANALYSIS,surface plasmon resonance,http://www.bioassayontology.org/bao#BAO_0000054,False
+SURFACE PLASMON RESONANCE ASSAY,surface plasmon resonance,http://www.bioassayontology.org/bao#BAO_0000054,False
+SYBR GREEN ASSAY,SYBR Green I DNA staining,http://www.bioassayontology.org/bao#BAO_0002473,False
+THERMAL SHIFT ASSAY,thermal shift assay,http://www.bioassayontology.org/bao#BAO_0010261,False
+TOP-COUNT BETA COUNTING RELATIVE,scintillation counting,http://www.bioassayontology.org/bao#BAO_0000405,True
+TR-FRET ANALYSIS,time resolved fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000004,False
+TR-FRET ASSAY,time resolved fluorescence resonance energy transfer,http://www.bioassayontology.org/bao#BAO_0000004,False
+TWO FOLD DILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+TWOFOLD DILUTION METHOD,dilution method,http://www.bioassayontology.org/bao#BAO_0002418,False
+VP-ITC MICROCALORIMETRY,isothermal titration calorimetry,http://www.bioassayontology.org/bao#BAO_0000428,True
+WESTERN BLOT ANALYSIS,western blot,http://www.bioassayontology.org/bao#BAO_0002424,False
+WESTERN BLOT METHOD,western blot,http://www.bioassayontology.org/bao#BAO_0002424,False
+WHOLE-CELL ELECTROPHYSIOLOGY,electrophysiological method,http://www.bioassayontology.org/bao#BAO_0000424,False
+XTT ASSAY,XTT reduction assay,http://www.bioassayontology.org/bao#BAO_0002458,False
