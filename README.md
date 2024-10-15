@@ -88,7 +88,9 @@ Here’s a general overview of the workflow:
 
 ## Contributors
 
-- [Contributor 1](https://github.com/contributor1)
-- [Contributor 2](https://github.com/contributor2)
+- [Santosh Tirunagari](https://github.com/tsantosh7)
+- [Melanie Vollmer](https://github.com/mevol)
+- [Ines Smit](https://github.com/inessmit)
+- [Nicolas Bosc](https://github.com/nbosc)
 
 For more details, feel free to check the individual folders for each stage or reach out via GitHub Issues.
