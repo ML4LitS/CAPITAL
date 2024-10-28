@@ -36,7 +36,7 @@ if __name__ == "__main__":
     OUTPUT_PICKLE_FILENAME = "/home/stirunag/work/github/CAPITAL/normalisation/dictionary/NCBI_terms.pkl"
     OUTPUT_LIST = "/home/stirunag/work/github/CAPITAL/normalisation/dictionary/NCBI_list.txt"
     FAISS_INDEX_FILENAME = "/home/stirunag/work/github/CAPITAL/normalisation/dictionary/NCBI_terms.index"
-    MODEL_PATH = "/home/stirunag/work/github/ML_annotations/normalisation/en_floret_model"
+    MODEL_PATH = "/home/stirunag/work/github/CAPITAL/normalisation/en_floret_model"
 
     # Extract terms and IDs
     term_id_dict = extract_terms_and_ids_from_csv(INPUT_FILENAME)

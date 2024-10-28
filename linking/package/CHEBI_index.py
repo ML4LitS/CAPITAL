@@ -1,6 +1,6 @@
-from pronto import Ontology
+from bs4 import BeautifulSoup
 from tqdm import tqdm
-from indexing import preprocess_and_index
+
 
 def extract_terms_and_ids_from_chebi(input_filename):
     """
@@ -12,19 +12,33 @@ def extract_terms_and_ids_from_chebi(input_filename):
     Returns:
         dict: Dictionary where keys are terms and values are IDs.
     """
-    chebi = Ontology(input_filename)
+    # Parse the OWL file using BeautifulSoup
+    with open(input_filename, 'r') as file:
+        soup = BeautifulSoup(file, 'xml')
+
     term_to_id = {}
 
-    print("Processing terms from ChEBI ontology...")
-    for term in tqdm(chebi.terms(), total=len(chebi.terms()), desc="Extracting Terms"):
-        chebi_id = term.id
-        term_name = term.name
+    # Find all owl:Class elements
+    all_classes = soup.find_all("owl:Class")
 
-        if not term_name:
-            continue
+    # Iterate through each class and extract relevant information
+    for owl_class in tqdm(all_classes, desc="Extracting ChEBI Terms", total=len(all_classes)):
+        # Extract the ID from rdf:about attribute
+        chebi_id = owl_class.get('rdf:about')
+        if chebi_id:
+            chebi_id = chebi_id.split("/")[-1]
 
-        term_name = term_name.lower()
-        term_to_id[term_name] = chebi_id
+        # Initialize term_name to None
+        term_name = None
+
+        # Extract the label using rdfs:label
+        label = owl_class.find("rdfs:label")
+        if label:
+            term_name = label.text.strip()
+
+        # Make sure we have a term name and ID
+        if term_name and chebi_id:
+            term_to_id[term_name.lower()] = chebi_id
 
     return term_to_id
 
