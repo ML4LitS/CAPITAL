@@ -1,0 +1,88 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+#input-text {
+    width: 80%;
+    height: 200px;
+    margin: 20px auto;
+    display: block;
+    padding: 10px;
+    font-size: 1.2em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#annotate-button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#annotate-button:hover {
+    background-color: #45a049;
+}
+
+#output {
+    width: 80%;
+    margin: 20px auto;
+    line-height: 1.6;
+}
+
+.annotation {
+    position: relative;
+    padding: 5px;
+    margin: 20px 0;
+    display: inline-block;
+    border-radius: 5px; /* Add this line to make the corners rounded */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* Add this line to create a shadow effect */
+}
+
+.score, .entity {
+    font-size: 0.8em;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    text-align: center;
+    color: #333;
+}
+
+.score {
+    top: -1.5em;
+}
+
+.entity {
+    bottom: -1.5em;
+}
+
+
+
+
+/* Annotation */
+.annotation .score {
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.annotation .entity {
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+/* Highlight */
+.highlight {
+  padding: 2px;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 2px;
+}
+
+

@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-
+from indexing import preprocess_and_index
 
 def extract_terms_and_ids_from_chebi(input_filename):
     """
@@ -34,10 +34,12 @@ def extract_terms_and_ids_from_chebi(input_filename):
         # Extract the label using rdfs:label
         label = owl_class.find("rdfs:label")
         if label:
-            term_name = label.text.strip()
+
+            term_name = label.text.replace('atom','').replace('molecular entity','').strip()
 
         # Make sure we have a term name and ID
         if term_name and chebi_id:
+
             term_to_id[term_name.lower()] = chebi_id
 
     return term_to_id

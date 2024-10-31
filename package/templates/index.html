@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Annotator</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+    <textarea id="input-text" maxlength="2500"></textarea>
+    <p id="char-limit-note">Please limit your input to approximately 250 words.</p>
+    <button id="annotate-button">Annotate</button><br/>
+    <div id="output"></div>
+
+<script>
+
+$(document).ready(function() {
+
+    $('#annotate-button').click(function() {
+        $.post('http://127.0.0.1:5000/annotate_link_cli', { text: $('#input-text').val() }, function(data) {
+            var text = $('#input-text').val();
+            var result = '';
+            var index = 0;
+            
+            if (data.length === 0) {
+                $('#output').html("No entities found.");
+                return;
+            }
+
+            for (var i = 0; i < data.length; i++) {
+                var annotation = data[i];
+                var color = '';
+                var entity_group = annotation[2];
+                switch(entity_group) {
+                    case 'OG': color = 'rgba(255, 77, 77,' + annotation[4] + ')'; break;
+                    case 'GP': color = 'rgba(77, 255, 77,' + annotation[4] + ')'; break;
+                    case 'DS': color = 'rgba(135, 135, 255,' + annotation[4] + ')'; break;
+                    case 'CD': color = 'rgba(255, 255, 77,'+ annotation[4] + ')'; break;
+                }
+                result += text.substring(index, annotation[0]);
+                result += '<span class="annotation" style="background-color:' + color + ';">'
+                        + '<a href="' + annotation[6] + '" target="_blank">'  // Adding a link to the annotated entity
+                        + '<span class="score">' + annotation[4] + '</span>'
+                        + text.substring(annotation[0], annotation[1])
+                        + '<span class="entity">' + entity_group + '</span>'
+                        + '</a>'
+                        + '</span>';
+                index = annotation[1];
+            }
+            result += text.substring(index);
+            $('#output').html(result);
+        });
+    });
+
+});
+
+</script>
+
+</body>
+</html>
+
