@@ -100,7 +100,7 @@ ipython_config.py
 *.gz
 *.jsonl
 *.json.gz
-
+*.env_paths
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
