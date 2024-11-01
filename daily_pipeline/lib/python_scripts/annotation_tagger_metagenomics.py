@@ -15,22 +15,6 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-# Constants and mappings
-# SECTIONS_MAP = {
-#     "TITLE": "Title",
-#     "ABSTRACT": "Abstract",
-#     "INTRO": "Introduction",
-#     "METHODS": "Methods",
-#     "RESULTS": "Results",
-#     "DISCUSS": "Discussion",
-#     "ACK_FUND": "Acknowledgments",
-#     "AUTH_CONT": "Author Contributions",
-#     "COMP_INT": "Competing Interests",
-#     "REF": "References",
-#     "TABLE": "Table",
-#     "DATA SHARING STATEMENT": "Data Availability",
-#     "OTHER": "Other"
-# }
 
 SECTIONS_MAP = {
     "TITLE": "Title",
@@ -58,23 +42,6 @@ SECTIONS_MAP = {
 
 PROVIDER = "europepmc"
 PARALLEL_ = True
-
-# Mapping from abbreviation to full form
-ENTITY_TYPE_MAP = {
-    "EM": "methods",
-    "DS": "disease",
-    "GP": "gene_protein",
-    "GO": "go_term",
-    "CD": "chemical",
-    "OG": "organism"
-    # Add other mappings as necessary
-}
-
-
-# Helper Functions
-def map_entity_type(abbrev):
-    """Map abbreviation to full form."""
-    return ENTITY_TYPE_MAP.get(abbrev, abbrev.lower())
 
 
 def get_word_position(sent_id, sentence_text, char_start):
@@ -410,6 +377,7 @@ def process_each_article(input_file, output_dir):
 
 # Main entry point with updated argument parsing
 if __name__ == '__main__':
+
     session_options = ort.SessionOptions()
     session_options.intra_op_num_threads = 1  # Limit to a single thread
     session_options.inter_op_num_threads = 1  # Limit to a single thread
@@ -494,6 +462,4 @@ if __name__ == '__main__':
 
     # Now call process_each_article with input and output directories
     process_each_article(args.input, args.output)
-
-
 
