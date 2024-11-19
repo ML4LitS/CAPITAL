@@ -16,7 +16,7 @@ import string
 app = Flask(__name__)
 
 # Load the quantized model and tokenizer
-model_path_quantised = '/home/stirunag/work/github/CAPITAL/model'
+model_path_quantised = '/home/stirunag/work/github/CAPITAL/model/europepmc/'
 print("Loading NER model and tokenizer...")
 model_quantized = ORTModelForTokenClassification.from_pretrained(
     model_path_quantised,
