@@ -3,43 +3,108 @@ import pickle
 import spacy
 # import numpy as np
 import re
+import sys
 from fuzzywuzzy import fuzz, process
 from sklearn.metrics.pairwise import cosine_similarity
 import string
+
+# from flask_GUI.flask_app import loaded_data
+
 # import pandas as pd
 
 # Load spaCy model
-nlp = spacy.load("/home/stirunag/work/github/CAPITAL/normalisation/en_floret_model")
+MODEL_PATH = "/home/stirunag/work/github/CAPITAL/normalisation/en_floret_model"
+try:
+    nlp = spacy.load(MODEL_PATH)
+except OSError:
+    print(f"Error: The spaCy model at '{MODEL_PATH}' was not found.", file=sys.stderr)
+    sys.exit(1)
 
 # Mapping of file names to each annotation type
-file_mapping = {
+FILE_MAPPING = {
     'CD': ('chebi_terms.index', 'chebi_terms.pkl'),
     'OG': ('NCBI_terms.index', 'NCBI_terms.pkl'),
     'DS': ('umls_terms.index', 'umls_terms.pkl'),
     'GP': ('uniprot_terms.index', 'uniprot_terms.pkl'),
     'GO': ('go_terms.index', 'go_terms.pkl'),
-    'EM': ('em_terms.index', 'em_terms.pkl')
+    'EM': ('em_terms.index', 'em_terms.pkl'),
+    'primer': ('primer_terms.index', 'primer_terms.pkl')  # Added comma
 }
 
 # Load data and indices for each annotation type
-base_path = "/home/stirunag/work/github/CAPITAL/normalisation/dictionary/"
-loaded_data = {}
-for annotation_type, (index_file, pkl_file) in file_mapping.items():
-    with open(base_path + pkl_file, "rb") as infile:
-        data = pickle.load(infile)
-    index = faiss.read_index(base_path + index_file)
+BASE_PATH = "/home/stirunag/work/github/CAPITAL/normalisation/dictionary/"
 
-    # Create a reverse mapping from CUI to term
-    id_to_term = {v: k for k, v in data["term_to_id"].items()}
+def load_annotations(annotation_types=None):
+    """
+    Load specified annotation types or all if none are specified.
 
-    # Store loaded data
-    loaded_data[annotation_type] = {
-        "term_to_id": data["term_to_id"],
-        "indexed_terms": data["indexed_terms"],
-        "index": index,
-        "id_to_term": id_to_term
-    }
-    print(f"Loaded data for {annotation_type}")
+    Args:
+        annotation_types (list or None): List of annotation type keys to load.
+                                         If None, all annotation types are loaded.
+
+    Returns:
+        dict: A dictionary containing loaded data for each annotation type.
+              The structure is:
+              {
+                  'AnnotationType': {
+                      'term_to_id': {...},
+                      'indexed_terms': ...,
+                      'index': faiss.Index,
+                      'id_to_term': {...}
+                  },
+                  ...
+              }
+    """
+    loaded_data = {}
+
+    # If no specific annotation types are provided, load all
+    if annotation_types is None:
+        annotation_types = list(FILE_MAPPING.keys())
+        print("No specific annotation types provided. Loading all annotation types.")
+    else:
+        # Validate provided annotation types
+        invalid_types = [atype for atype in annotation_types if atype not in FILE_MAPPING]
+        if invalid_types:
+            print(f"Error: The following annotation types are invalid: {', '.join(invalid_types)}", file=sys.stderr)
+            print(f"Valid annotation types are: {', '.join(FILE_MAPPING.keys())}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Loading specified annotation types: {', '.join(annotation_types)}")
+
+    for annotation_type in annotation_types:
+        index_file, pkl_file = FILE_MAPPING[annotation_type]
+
+        # Load pickle file
+        try:
+            with open(BASE_PATH + pkl_file, "rb") as infile:
+                data = pickle.load(infile)
+        except FileNotFoundError:
+            print(f"Error: Pickle file '{pkl_file}' for annotation type '{annotation_type}' not found.", file=sys.stderr)
+            continue
+        except pickle.UnpicklingError:
+            print(f"Error: Failed to unpickle file '{pkl_file}' for annotation type '{annotation_type}'.", file=sys.stderr)
+            continue
+
+        # Load FAISS index
+        try:
+            index = faiss.read_index(BASE_PATH + index_file)
+        except Exception as e:
+            print(f"Error: Failed to load FAISS index '{index_file}' for annotation type '{annotation_type}'.\n{e}", file=sys.stderr)
+            continue
+
+        # Create a reverse mapping from term_id to term
+        id_to_term = {v: k for k, v in data["term_to_id"].items()}
+
+        # Store loaded data
+        loaded_data[annotation_type] = {
+            "term_to_id": data["term_to_id"],
+            "indexed_terms": data.get("indexed_terms", None),  # Handle if 'indexed_terms' is not present
+            "index": index,
+            "id_to_term": id_to_term
+        }
+
+        print(f"Loaded data for '{annotation_type}'.")
+
+    return loaded_data
 
 # List of phrases to remove (converted to lowercase)
 phrases_to_remove = [
@@ -116,6 +181,7 @@ def get_embedding_match(term, index, indexed_terms, term_dict, model, threshold=
     return None
 
 
+
 def map_terms(entities, annotation_type, model):
     """Map new entities using exact, fuzzy, and embedding matches, with abbreviation fallback."""
     data = loaded_data[annotation_type]
@@ -135,7 +201,6 @@ def map_terms(entities, annotation_type, model):
                 match = get_embedding_match(entity.lower(), index, indexed_terms, term_dict, model)
         mapped_entities[entity] = match if match else "No Match"
     return mapped_entities
-
 
 def map_terms_reverse(entities, annotation_type, model):
     """Map entities using exact, similarity, and embedding matches, returning both code and term."""
@@ -176,8 +241,10 @@ def map_terms_reverse(entities, annotation_type, model):
 
 
 # Example terms and annotation type
-terms = ['hypertension', 'covid19', 'Coronavirus', 'Diabetes Type 2', 'abdomenal HeRNIA!!']
-annotation_type = 'DS'
+loaded_data = load_annotations(annotation_types=['primer'])
+# terms = ['hypertension', 'covid19', 'Coronavirus', 'Diabetes Type 2', 'abdomenal HeRNIA!!']
+annotation_type = 'primer'
+terms = ['E166', 'Fmoc-Leu-Val-D-Leu-O-Resin', 'U1510R', 'Fmoc-Leu-', 'OTU25to31-1406']
 
 results = map_terms(terms, annotation_type, nlp)
 # Print the mapped results

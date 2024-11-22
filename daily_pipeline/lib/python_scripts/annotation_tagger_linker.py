@@ -6,8 +6,8 @@ from optimum.onnxruntime import ORTModelForTokenClassification
 import argparse
 from tqdm import tqdm
 import onnxruntime as ort
-from entity_linker import map_to_url, map_terms_reverse
-from entity_tagger import process_each_article, batch_annotate_sentences, extract_annotation, format_output_annotations, SECTIONS_MAP
+from entity_linker import EntityLinker
+from entity_tagger import process_each_article, batch_annotate_sentences, format_output_annotations, SECTIONS_MAP, extract_annotation
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -18,13 +18,12 @@ PROVIDER = "europepmc"
 
 # Mapping from abbreviation to full form
 ENTITY_TYPE_MAP = {
-    "EM": "methods",
+    "EM": "exp_methods", #methods
     "DS": "disease",
     "GP": "gene_protein",
     "GO": "go_term",
     "CD": "chemical",
     "OG": "organism"
-    # Add other mappings as necessary
 }
 
 
@@ -48,7 +47,7 @@ def generate_tags(all_annotations):
     # Process each entity type with map_terms_reverse to get mapped terms and URLs
     mapped_results = {}
     for entity_type, entities in entities_by_type.items():
-        mapped_results[entity_type] = map_terms_reverse(entities, entity_type)
+        mapped_results[entity_type] = linker.map_terms_reverse(entities, entity_type)
 
     # Generate tags for each annotation
     for annotation in all_annotations:
@@ -58,7 +57,7 @@ def generate_tags(all_annotations):
         # Retrieve grounded code and term from mapped results
         if term in mapped_results[entity_type]:
             grounded_code, grounded_term = mapped_results[entity_type][term]
-            uri = map_to_url(entity_type, grounded_code)  # Generate URI based on entity group and code
+            uri = linker.map_to_url(entity_type, grounded_code)  # Generate URI based on entity group and code
 
             # Add the annotation with tags
             output_annotations.append({
@@ -169,6 +168,12 @@ if __name__ == '__main__':
         aggregation_strategy="max"
     )
     print("NER model and tokenizer loaded successfully.")
+
+    # Instantiate the EntityLinker class
+    print("Loading entity linking models.")
+    linker = EntityLinker()
+    loaded_data = linker.load_annotations(['EM', 'DS', 'GP', 'GO', 'CD', 'OG'])
+
 
     # Now call process_each_article with input and output directories
     # process_each_article(input_path, output_path)

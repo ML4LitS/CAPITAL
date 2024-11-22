@@ -3,114 +3,162 @@ import pandas as pd
 from pathlib import Path
 from urllib.parse import urlparse
 import requests
-import pickle
+import torch.nn.functional as F
+import torch
+from markdown_it.common.entities import entities
 from transformers import AutoModel, AutoTokenizer, pipeline, AutoModelForSequenceClassification
 from optimum.onnxruntime import ORTModelForTokenClassification
 import argparse
 import onnxruntime as ort
-# from entity_linker import map_to_url, map_terms_reverse
 from entity_tagger import process_each_article, batch_annotate_sentences, extract_annotation, format_output_annotations, SECTIONS_MAP
+# from entity_linker import load_annotations, map_to_url, map_terms_reverse
+from entity_linker import EntityLinker
 import torch.nn as nn
-
+import numpy as np
 
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-import torch
+import pickle
+from transformers import AutoModel, AutoTokenizer
 
-
+# Global variables for models and artifacts
 PROVIDER = "Metagenomics"
+sim_model = None
+sim_tokenizer = None
+label_encoder = None
+clf = None
 
-# Define the custom ClassificationModel class
-class ClassificationModel(nn.Module):
-    def __init__(self, encoder, num_classes):
-        super(ClassificationModel, self).__init__()
-        self.encoder = encoder
-        self.classifier = nn.Linear(encoder.config.hidden_size, num_classes)
+# Set ONNX runtime session options
+session_options = ort.SessionOptions()
+session_options.intra_op_num_threads = 1  # Limit to a single thread
+session_options.inter_op_num_threads = 1  # Limit to a single thread
 
-    def forward(self, input_ids, attention_mask):
-        outputs = self.encoder(
-            input_ids=input_ids,
-            attention_mask=attention_mask
+ENTITY_TYPE_MAP = {
+    "sample-material": "Sample-Material",
+    "body-site": "Body-Site",
+    "host": "Host",
+    "state": "State",
+    "site": "Site",
+    "place": "Place",
+    "date": "Date",
+    "engineered": "Engineered",
+    "ecoregion": "Ecoregion",
+    "treatment": "Treatment",
+    "kit": "Kit",
+    "primer": "Primer",
+    "gene": "Gene",
+    "ls": "LS",
+    "lcm": "LCM",
+    "sequencing": "Sequencing"
+}
+
+
+# Helper Functions
+def map_entity_type(abbrev):
+    """Map abbreviation to full form."""
+    return ENTITY_TYPE_MAP.get(abbrev, abbrev.upper())
+
+
+
+# Function to load an ONNX NER model
+def load_ner_model(model_path, session_options):
+    try:
+        model = ORTModelForTokenClassification.from_pretrained(
+            model_path, file_name="model_quantized.onnx", session_options=session_options
         )
-        # Use pooler_output or the [CLS] token from the last_hidden_state
-        embeddings = (
-            outputs.pooler_output
-            if hasattr(outputs, 'pooler_output') and outputs.pooler_output is not None
-            else outputs.last_hidden_state[:, 0, :]
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, model_max_length=512, batch_size=4, truncation=True
         )
-        logits = self.classifier(embeddings)
-        return logits, embeddings
+        return pipeline("token-classification", model=model, tokenizer=tokenizer, aggregation_strategy="max")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load NER model from path {model_path}: {str(e)}")
 
-def calibrate_logits(logits, temperature=1.0):
+
+# Load all models and artifacts once
+def load_artifacts(base_path):
     """
-    Adjust logits using temperature scaling for better-calibrated probabilities.
+    Load all necessary models and artifacts into memory.
+
+    Args:
+        base_path (str): Path to the folder containing saved models and artifacts.
     """
-    logits = logits / temperature  # Scale logits
-    probabilities = torch.softmax(logits, dim=1)  # Calculate probabilities
-    return probabilities
+    global sim_model, sim_tokenizer, label_encoder, clf
 
+    # Paths to each folder
+    model_folder = os.path.join(base_path, "hf_model")
+    tokenizer_folder = os.path.join(base_path, "hf_tokenizer")
+    label_encoder_path = os.path.join(base_path, "label_encoder", "label_encoder.pkl")
+    logreg_path = os.path.join(base_path, "logistic_regression", "logistic_regression.pkl")
 
-def classify_sentence(sentence, temperature=1.0):
-    # Tokenize the input sentence
-    encoding = tokenizer(
-        sentence,
-        padding='max_length',
-        truncation=True,
-        max_length=512,
-        return_tensors='pt'
-    )
+    # Load Hugging Face model and tokenizer
+    sim_model = AutoModel.from_pretrained(model_folder)
+    sim_tokenizer = AutoTokenizer.from_pretrained(tokenizer_folder)
 
-    input_ids = encoding["input_ids"]
-    attention_mask = encoding["attention_mask"]
+    # Load LabelEncoder
+    with open(label_encoder_path, 'rb') as f:
+        label_encoder = pickle.load(f)
 
-    # Predict using the model
-    article_model.eval()
+    # Load Logistic Regression classifier
+    with open(logreg_path, 'rb') as f:
+        clf = pickle.load(f)
+
+    # print("Artifacts loaded successfully.")
+
+def mean_pooling(model_output, attention_mask):
+    """
+    Mean pooling function that takes attention masks into account.
+    """
+    token_embeddings = model_output[0]  # First element: token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+def classify_abstract(abstract):
+    """
+    Classifies an abstract using preloaded models and artifacts.
+
+    Args:
+        abstract (str): The abstract to classify.
+
+    Returns:
+        dict: A dictionary with predicted class label and probabilities.
+    """
+    global sim_model, sim_tokenizer, label_encoder, clf
+
+    # Ensure models and artifacts are loaded
+    if sim_model is None or sim_tokenizer is None or label_encoder is None or clf is None:
+        raise RuntimeError("Artifacts are not loaded. Please call `load_artifacts` first.")
+
+    # Process the input abstract
+    sim_model.eval()  # Ensure the model is in evaluation mode
+    encoded_input = sim_tokenizer(abstract, padding=True, truncation=True, return_tensors='pt')
     with torch.no_grad():
-        outputs = article_model(input_ids, attention_mask)
+        model_output = sim_model(**encoded_input)
+    sentence_embedding = mean_pooling(model_output, encoded_input['attention_mask'])
+    sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1).cpu().numpy()
 
-    # Extract logits from model output
-    if isinstance(outputs, tuple):
-        logits = outputs[0]  # Extract logits if outputs is a tuple
-    else:
-        logits = outputs  # Use directly if outputs is not a tuple
+    # Predict the class label and probability
+    predicted_probabilities = clf.predict_proba(sentence_embedding)[0]
+    predicted_label = clf.predict(sentence_embedding)[0]
+    class_label = label_encoder.inverse_transform([predicted_label])[0]
 
-    # Apply temperature scaling
-    probabilities = calibrate_logits(logits, temperature).cpu().numpy().flatten()
-
-    # Get predicted class and decode label
-    predicted_class = probabilities.argmax()  # Class index with the highest probability
-    predicted_label = label_encoder.inverse_transform([predicted_class])[0]
-    predicted_probability = probabilities[predicted_class]
-
-    return predicted_label, predicted_probability
-
-
-
-# def classify_sentence(sentence):
-#     inputs = tokenizer(sentence, return_tensors="pt", truncation=True, padding=True, max_length=512)
-#     article_model.eval()
-#     with torch.no_grad():
-#         outputs = article_model(**inputs)
-#     logits = outputs.logits
-#
-#     # Calculate probabilities from logits
-#     probabilities = softmax(logits, dim=1)
-#
-#     # Get the predicted class and its probability
-#     predicted_class = torch.argmax(logits, dim=1).item()
-#     predicted_label = label_encoder.inverse_transform([predicted_class])[0]
-#     predicted_probability = probabilities[0, predicted_class].item()
-#
-#     return predicted_label, predicted_probability
-
+    # Return the results
+    return class_label, predicted_probabilities.max()
 
 def normalize_tag(trm, entity):
     """
     Normalize terms to generate a URI based on the entity type.
     Returns "#" if no match is found.
+
+    Args:
+        trm (str): The term to normalize.
+        entity (str): The entity type (e.g., 'primer', 'kit').
+
+
+    Returns:
+        str: The generated URI or '#' if no match is found.
     """
     # Default URL to indicate no match
     ourl = "#"
@@ -152,17 +200,81 @@ def normalize_tag(trm, entity):
 
         # Handle 'primer' entity
         elif entity == 'primer':
-            csvf = Path('xrf/probebase/primer_probebase.csv')
-            if csvf.exists():
-                prmdf = pd.read_csv(csvf)
-                for p, prm in enumerate(prmdf['NAME']):
-                    if (prm in trm) or (trm == prm):
-                        ourl = list(prmdf['URL'])[p]
-                        break
+            mapped_results = linker.map_terms_reverse(entities=[trm], entity_type='primer')
+            if entity in mapped_results and trm in mapped_results[entity]:
+                grounded_code, _ = mapped_results[entity][trm]
+                ourl = linker.map_to_url(entity_group='Primer', ent_id=grounded_code)
+
     except Exception as e:
         print(f"{trm}: error - {e}")
 
     return ourl
+
+
+
+# def normalize_tag(trm, entity, primer_df=None):
+#     """
+#     Normalize terms to generate a URI based on the entity type.
+#     Returns "#" if no match is found.
+#
+#     Args:
+#         trm (str): The term to normalize.
+#         entity (str): The entity type (e.g., 'primer', 'kit').
+#         primer_df (pd.DataFrame, optional): Preloaded primer dictionary as a DataFrame.
+#
+#     Returns:
+#         str: The generated URI or '#' if no match is found.
+#     """
+#     # Default URL to indicate no match
+#     ourl = "#"
+#
+#     try:
+#         # Skip single-character terms
+#         if len(trm) <= 1:
+#             return ourl
+#
+#         # Handle general cases for non-'primer' and non-'kit' entities
+#         if entity not in ['primer', 'kit']:
+#             url = f'https://www.ebi.ac.uk/spot/zooma/v2/api/services/annotate?propertyValue={trm}'
+#             response = requests.get(url)
+#
+#             # Check for a successful response
+#             if response.status_code == 200:
+#                 try:
+#                     rjson = response.json()
+#                     if rjson:
+#                         rslt = rjson[0]
+#                         lnk = rslt['_links']['olslinks'][0]
+#                         gurl = lnk.get('semanticTag', [])
+#
+#                         if 'http://purl.obolibrary.org/obo/' in gurl:
+#                             db_id = urlparse(gurl).path.split('/')[2:3][0]
+#                             db = db_id.split('_')[0]
+#                             ourl = f'https://www.ebi.ac.uk/ols/ontologies/{db}/terms?iri=http%3A%2F%2Fpurl.obolibrary.org%2Fobo%2F{db_id}'
+#                         else:
+#                             ourl = gurl
+#                 except ValueError as e:
+#                     print(f"{trm}: error - Failed to parse JSON - {e}")
+#             else:
+#                 print(f"{trm}: error - HTTP status code {response.status_code}")
+#
+#         # Handle 'kit' entity
+#         elif entity == 'kit':
+#             trm = trm.replace(' ', '-')
+#             ourl = f'https://www.biocompare.com/General-Search/?search={trm}'
+#
+#         # Handle 'primer' entity
+#         elif entity == 'primer' and primer_df is not None:
+#             for p, prm in enumerate(primer_df['NAME']):
+#                 if (prm in trm) or (trm == prm):
+#                     ourl = list(primer_df['URL'])[p]
+#                     break
+#
+#     except Exception as e:
+#         print(f"{trm}: error - {e}")
+#
+#     return ourl
+
 
 def generate_tags(all_annotations):
     """
@@ -178,10 +290,10 @@ def generate_tags(all_annotations):
 
         # Normalize the term to get the URI using normalize_tag
         uri = normalize_tag(term, entity_type)
-
+        # uri = normalize_tag(term, entity_type, primer_df=primer_df)
         # Add the annotation with tags, using "#" if no URI was found
         output_annotations.append({
-            "type": entity_type,
+            "type": map_entity_type(entity_type),
             "position": annotation["position"],
             "prefix": annotation["prefix"],
             "exact": term,
@@ -223,42 +335,38 @@ def process_article_generate_jsons(article_data):
     abstract_text = " ".join(abstract_text_list)
 
     # Classify the article based on the abstract
-    predicted_label, proba = classify_sentence(abstract_text)
-    print([article_type, open_status, pmcid, predicted_label, proba])
-    if predicted_label != "metagenomics" or (predicted_label == "metagenomics" and proba < 0.99):
+    predicted_label, proba = classify_abstract(abstract_text)
+    if predicted_label != "metagenomics" : #or (predicted_label == "metagenomics" and proba < 0.8)
         return None, None  # Skip NER tagging if label is "other"
 
     all_annotations = []
-    # print([article_type, open_status, pmcid, predicted_label, proba])
+    print([article_type, open_status, pmcid, predicted_label, proba])
     # Loop through each NER model for the specified sections
-    # for metagenomic_model in ner_models:
-    #     # print(model)
-    #     for section_key, sentences in article_data.get("sections", {}).items():
-    #         if section_key not in ["INTRO", "METHODS", "RESULTS", "DISCUSS"]:
-    #             continue  # Skip all sections except the specified ones
-    #
-    #         section = SECTIONS_MAP.get(section_key, "Other")
-    #         # Pass the NER model and parallel flag to batch_annotate_sentences
-    #         batch_annotations = batch_annotate_sentences(sentences, section, ner_model=metagenomic_model, extract_annotation_fn=extract_annotation)
-    #         if not batch_annotations:
-    #             continue
-    #
-    #         all_annotations.extend(batch_annotations)
-    #
-    # # Generate tags for annotations - this includes grounded terms and grounded codes.
-    # all_linked_annotations = generate_tags(all_annotations)
-    # # Format matched and unmatched JSON structures
-    # match_json, non_match_json = format_output_annotations(all_linked_annotations, pmcid=pmcid, ft_id=ft_id)
-    #
-    # # Return None if both JSONs are empty or have empty 'anns' lists
-    # if not match_json["anns"] and not non_match_json["anns"]:
-    #     return None, None
-    #
-    # return match_json, non_match_json
+    for metagenomic_model in ner_models:
+        # print(model)
+        for section_key, sentences in article_data.get("sections", {}).items():
+            if section_key not in ["INTRO", "METHODS", "RESULTS", "DISCUSS"]:
+                continue  # Skip all sections except the specified ones
 
+            section = SECTIONS_MAP.get(section_key, "Other")
+            # Pass the NER model and parallel flag to batch_annotate_sentences
+            batch_annotations = batch_annotate_sentences(sentences, section, ner_model=metagenomic_model, extract_annotation_fn=extract_annotation)
+            if not batch_annotations:
+                continue
 
+            all_annotations.extend(batch_annotations)
 
+    # Generate tags for annotations - this includes grounded terms and grounded codes.
+    all_linked_annotations = generate_tags(all_annotations)
+    # Format matched and unmatched JSON structures
+    match_json, non_match_json = format_output_annotations(all_linked_annotations, pmcid=pmcid, ft_id=ft_id)
 
+    # Return None if both JSONs are empty or have empty 'anns' lists
+    if not match_json["anns"] and not non_match_json["anns"]:
+        return None, None
+    #
+    # print([abstract_text, article_type, open_status, pmcid, predicted_label, proba])
+    return match_json, non_match_json
 
 
 # Main entry point with updated argument parsing
@@ -266,35 +374,20 @@ if __name__ == '__main__':
         # Load environment variables
         # load_dotenv('/home/stirunag/work/github/CAPITAL/daily_pipeline/.env_paths')
         ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
+        primer_dictionary_path = '/home/stirunag/work/github/CAPITAL/normalisation/dictionary/'
+        article_classifier_path = ml_model_path+"article_classifier/"
+
+        # Instantiate the EntityLinker class
+        linker = EntityLinker()
+        loaded_data = linker.load_annotations(['primer'])
 
         if not ml_model_path:
             raise ValueError("Environment variable 'MODEL_PATH_QUANTIZED' not found.")
 
-        # Define paths
-        article_model_path = ml_model_path + 'article_classifier/best_contrastive_binary_model_absurd-sweep-98.pth'
-        article_label_encoder_path = ml_model_path + 'article_classifier/best_label_encoder_absurd-sweep-98.pkl'
-        pretrained_model_name = "bioformers/bioformer-8L"
+
         metagenomic_paths = [
             ml_model_path + f'metagenomics/metagenomic-set-{i}_quantised' for i in range(1, 6)
         ]
-
-        # Set ONNX runtime session options
-        session_options = ort.SessionOptions()
-        session_options.intra_op_num_threads = 1  # Limit to a single thread
-        session_options.inter_op_num_threads = 1  # Limit to a single thread
-
-        # Function to load an ONNX NER model
-        def load_ner_model(model_path, session_options):
-            try:
-                model = ORTModelForTokenClassification.from_pretrained(
-                    model_path, file_name="model_quantized.onnx", session_options=session_options
-                )
-                tokenizer = AutoTokenizer.from_pretrained(
-                    model_path, model_max_length=512, batch_size=4, truncation=True
-                )
-                return pipeline("token-classification", model=model, tokenizer=tokenizer, aggregation_strategy="max")
-            except Exception as e:
-                raise RuntimeError(f"Failed to load NER model from path {model_path}: {str(e)}")
 
         # Load all NER models
         try:
@@ -303,18 +396,14 @@ if __name__ == '__main__':
         except Exception as e:
             raise RuntimeError(f"Error loading NER models: {str(e)}")
 
-        # Load the article classifier model
+        # Load all NER models
         try:
-            tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
-            # article_model = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name, num_labels=2)
-            encoder = AutoModel.from_pretrained(pretrained_model_name)
-            article_model = ClassificationModel(encoder=encoder, num_classes=2)
-            article_model.load_state_dict(torch.load(article_model_path, map_location=torch.device('cpu')), strict=False)
-            with open(article_label_encoder_path, 'rb') as f:
-                label_encoder = pickle.load(f)
-            print("Article classifier model and label encoder loaded successfully.")
+            load_artifacts(article_classifier_path)
+            print("All article classifier models loaded successfully.")
         except Exception as e:
-            raise RuntimeError(f"Failed to load article classifier or label encoder: {str(e)}")
+            raise RuntimeError(f"Error loading article classifier models: {str(e)}")
+
+
 
         # Define paths
         input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch_2024_10_28_0.json.gz"  # Replace with your actual input file path
