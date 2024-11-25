@@ -27,80 +27,11 @@ ENTITY_TYPE_MAP_1 = {
 }
 
 
-
-
 # Helper Functions
 def map_entity_type(abbrev, ENTITY_TYPE_MAP):
     """Map abbreviation to full form."""
     return ENTITY_TYPE_MAP.get(abbrev, abbrev.lower())
 
-
-#
-# # Helper Functions
-# def map_entity_type(abbrev):
-#     """Map abbreviation to full form."""
-#     return ENTITY_TYPE_MAP.get(abbrev, abbrev.lower())
-
-# def generate_tags(all_annotations):
-#     """
-#     Generate tags for each annotation in all_annotations using map_terms_reverse and map_to_url.
-#     Each annotation will have 'name' and 'uri' fields in the 'tags' list.
-#     """
-#     output_annotations = []
-#
-#     # Group entities by type for map_terms_reverse
-#     entities_by_type = defaultdict(set)
-#     for annotation in all_annotations:
-#         entities_by_type[annotation['type']].add(annotation['exact'])
-#
-#     # Process each entity type with map_terms_reverse to get mapped terms and URLs
-#     mapped_results = {}
-#     for entity_type, entities in entities_by_type.items():
-#         mapped_results[entity_type] = linker.map_terms_reverse(entities, entity_type)
-#
-#     # Generate tags for each annotation
-#     for annotation in all_annotations:
-#         entity_type = annotation['type']
-#         term = annotation['exact']
-#
-#         # Retrieve grounded code and term from mapped results
-#         if term in mapped_results[entity_type]:
-#             grounded_code, grounded_term = mapped_results[entity_type][term]
-#             uri = linker.map_to_url(entity_type, grounded_code)  # Generate URI based on entity group and code
-#
-#             # Add the annotation with tags
-#             output_annotations.append({
-#                 "type": map_entity_type(entity_type),
-#                 "position": annotation["position"],
-#                 "prefix": annotation["prefix"],
-#                 "exact": term,
-#                 "section": annotation["section"],
-#                 "postfix": annotation["postfix"],
-#                 "tags": [
-#                     {
-#                         "name": grounded_term,
-#                         "uri": uri
-#                     }
-#                 ]
-#             })
-#         else:
-#             # In case there’s no mapping found, skip or add with no URI
-#             output_annotations.append({
-#                 "type": map_entity_type(entity_type),
-#                 "position": annotation["position"],
-#                 "prefix": annotation["prefix"],
-#                 "exact": term,
-#                 "section": annotation["section"],
-#                 "postfix": annotation["postfix"],
-#                 "tags": [
-#                     {
-#                         "name": "#",
-#                         "uri": "#"
-#                     }
-#                 ]
-#             })
-#
-#     return output_annotations
 
 def generate_tags(all_annotations, entity_map, linker=None):
     """
