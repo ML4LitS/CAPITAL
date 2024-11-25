@@ -7,7 +7,7 @@ import argparse
 from tqdm import tqdm
 import onnxruntime as ort
 from entity_linker import EntityLinker
-from entity_tagger import process_each_article, batch_annotate_sentences, format_output_annotations, SECTIONS_MAP, extract_annotation
+from entity_tagger import process_each_article, load_ner_model, batch_annotate_sentences, format_output_annotations, SECTIONS_MAP, extract_annotation
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 PROVIDER = "europepmc"
 
 # Mapping from abbreviation to full form
-ENTITY_TYPE_MAP = {
+ENTITY_TYPE_MAP_1 = {
     "EM": "exp_methods", #methods
     "DS": "disease",
     "GP": "gene_protein",
@@ -27,72 +27,136 @@ ENTITY_TYPE_MAP = {
 }
 
 
+
+
 # Helper Functions
-def map_entity_type(abbrev):
+def map_entity_type(abbrev, ENTITY_TYPE_MAP):
     """Map abbreviation to full form."""
     return ENTITY_TYPE_MAP.get(abbrev, abbrev.lower())
 
-def generate_tags(all_annotations):
+
+#
+# # Helper Functions
+# def map_entity_type(abbrev):
+#     """Map abbreviation to full form."""
+#     return ENTITY_TYPE_MAP.get(abbrev, abbrev.lower())
+
+# def generate_tags(all_annotations):
+#     """
+#     Generate tags for each annotation in all_annotations using map_terms_reverse and map_to_url.
+#     Each annotation will have 'name' and 'uri' fields in the 'tags' list.
+#     """
+#     output_annotations = []
+#
+#     # Group entities by type for map_terms_reverse
+#     entities_by_type = defaultdict(set)
+#     for annotation in all_annotations:
+#         entities_by_type[annotation['type']].add(annotation['exact'])
+#
+#     # Process each entity type with map_terms_reverse to get mapped terms and URLs
+#     mapped_results = {}
+#     for entity_type, entities in entities_by_type.items():
+#         mapped_results[entity_type] = linker.map_terms_reverse(entities, entity_type)
+#
+#     # Generate tags for each annotation
+#     for annotation in all_annotations:
+#         entity_type = annotation['type']
+#         term = annotation['exact']
+#
+#         # Retrieve grounded code and term from mapped results
+#         if term in mapped_results[entity_type]:
+#             grounded_code, grounded_term = mapped_results[entity_type][term]
+#             uri = linker.map_to_url(entity_type, grounded_code)  # Generate URI based on entity group and code
+#
+#             # Add the annotation with tags
+#             output_annotations.append({
+#                 "type": map_entity_type(entity_type),
+#                 "position": annotation["position"],
+#                 "prefix": annotation["prefix"],
+#                 "exact": term,
+#                 "section": annotation["section"],
+#                 "postfix": annotation["postfix"],
+#                 "tags": [
+#                     {
+#                         "name": grounded_term,
+#                         "uri": uri
+#                     }
+#                 ]
+#             })
+#         else:
+#             # In case there’s no mapping found, skip or add with no URI
+#             output_annotations.append({
+#                 "type": map_entity_type(entity_type),
+#                 "position": annotation["position"],
+#                 "prefix": annotation["prefix"],
+#                 "exact": term,
+#                 "section": annotation["section"],
+#                 "postfix": annotation["postfix"],
+#                 "tags": [
+#                     {
+#                         "name": "#",
+#                         "uri": "#"
+#                     }
+#                 ]
+#             })
+#
+#     return output_annotations
+
+def generate_tags(all_annotations, entity_map, linker=None):
     """
-    Generate tags for each annotation in all_annotations using map_terms_reverse and map_to_url.
-    Each annotation will have 'name' and 'uri' fields in the 'tags' list.
+    Generate tags for each annotation in all_annotations. Handles provider-specific requirements.
+
+    Args:
+        all_annotations (list): List of annotations to process.
+        entity_map (dict): Mapping of entity abbreviations to full forms.
+        linker (object): Linker object for term mapping (required for map_terms_reverse).
+
+    Returns:
+        list: Processed annotations with tags (name and uri).
     """
     output_annotations = []
-
-    # Group entities by type for map_terms_reverse
-    entities_by_type = defaultdict(set)
-    for annotation in all_annotations:
-        entities_by_type[annotation['type']].add(annotation['exact'])
-
-    # Process each entity type with map_terms_reverse to get mapped terms and URLs
     mapped_results = {}
-    for entity_type, entities in entities_by_type.items():
-        mapped_results[entity_type] = linker.map_terms_reverse(entities, entity_type)
 
-    # Generate tags for each annotation
+    # Group annotations by type for batch processing
+    entities_by_type = defaultdict(list)
+    for annotation in all_annotations:
+        entities_by_type[annotation['type']].append(annotation['exact'])
+
+    for entity_type, terms in entities_by_type.items():
+        mapped_results[entity_type] = linker.map_terms_reverse(terms, entity_type)
+
+    # Assign tags to each annotation
     for annotation in all_annotations:
         entity_type = annotation['type']
         term = annotation['exact']
+        uri = "#"
+        grounded_term = "#"  # Default to the term itself
 
-        # Retrieve grounded code and term from mapped results
-        if term in mapped_results[entity_type]:
+        # Retrieve mapped results
+        entity_mapped_results = mapped_results.get(entity_type, {})
+        if term in entity_mapped_results:
             grounded_code, grounded_term = mapped_results[entity_type][term]
-            uri = linker.map_to_url(entity_type, grounded_code)  # Generate URI based on entity group and code
+            if grounded_code !='#'and grounded_term !='#':
+                uri = linker.map_to_url(entity_type, grounded_code)  # Generate URI based on entity group and code
 
-            # Add the annotation with tags
-            output_annotations.append({
-                "type": map_entity_type(entity_type),
-                "position": annotation["position"],
-                "prefix": annotation["prefix"],
-                "exact": term,
-                "section": annotation["section"],
-                "postfix": annotation["postfix"],
-                "tags": [
-                    {
-                        "name": grounded_term,
-                        "uri": uri
-                    }
-                ]
-            })
-        else:
-            # In case there’s no mapping found, skip or add with no URI
-            output_annotations.append({
-                "type": map_entity_type(entity_type),
-                "position": annotation["position"],
-                "prefix": annotation["prefix"],
-                "exact": term,
-                "section": annotation["section"],
-                "postfix": annotation["postfix"],
-                "tags": [
-                    {
-                        "name": "#",
-                        "uri": "#"
-                    }
-                ]
-            })
+
+        # Append processed annotation
+        output_annotations.append({
+            "type": map_entity_type(entity_type, entity_map),
+            "position": annotation["position"],
+            "prefix": annotation["prefix"],
+            "exact": term,
+            "section": annotation["section"],
+            "postfix": annotation["postfix"],
+            "tags": [
+                {
+                    "name": grounded_term,
+                    "uri": uri
+                }
+            ]
+        })
 
     return output_annotations
-
 
 # Main function for processing article and generating JSONs
 def process_article_generate_jsons(article_data):
@@ -116,9 +180,9 @@ def process_article_generate_jsons(article_data):
         all_annotations.extend(batch_annotations)
 
     # Generate tags for annotations- this includes grounded terms and grounded codes.
-    all_linked_annotations = generate_tags(all_annotations)
+    all_linked_annotations = generate_tags(all_annotations, entity_map=ENTITY_TYPE_MAP_1, linker=linker)
     # Format matched and unmatched JSON structures
-    match_json, non_match_json = format_output_annotations(all_linked_annotations, pmcid=pmcid, ft_id=ft_id)
+    match_json, non_match_json = format_output_annotations(all_linked_annotations, pmcid=pmcid, ft_id=ft_id, PROVIDER=PROVIDER)
 
     # Return None if both JSONs are empty or have empty 'anns' lists
     if not match_json["anns"] and not non_match_json["anns"]:
@@ -134,7 +198,7 @@ if __name__ == '__main__':
 
     # Directly assign the paths
     input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch_2024_10_28_0.json.gz"  # Replace with your actual input file path
-    output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results"  # Replace with your actual output directory path
+    output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/europepmc/"  # Replace with your actual output directory path
     model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"  # Replace with your actual model directory path
 
     # Check that input is a file
@@ -151,28 +215,38 @@ if __name__ == '__main__':
     os.makedirs(no_match_dir, exist_ok=True)
     no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
 
-    # Initialize NER model using the provided model path
+    # Load PROVIDER_1 (europepmc) NER model
     print("Loading NER model and tokenizer from " + model_path_quantised)
-    model_quantized = ORTModelForTokenClassification.from_pretrained(
-        model_path_quantised, file_name="model_quantized.onnx", session_options=session_options)
-    tokenizer_quantized = AutoTokenizer.from_pretrained(
-        model_path_quantised,
-        model_max_length=512,
-        batch_size=1,
-        truncation=True
-    )
-    ner_quantized = pipeline(
-        "token-classification",
-        model=model_quantized,
-        tokenizer=tokenizer_quantized,
-        aggregation_strategy="max"
-    )
-    print("NER model and tokenizer loaded successfully.")
+    ner_quantized = load_ner_model(model_path_quantised, session_options)
 
-    # Instantiate the EntityLinker class
-    print("Loading entity linking models.")
+    # Load EntityLinker with all required annotations, including primer
+    print("Loading entity linker.")
     linker = EntityLinker()
-    loaded_data = linker.load_annotations(['EM', 'DS', 'GP', 'GO', 'CD', 'OG'])
+    linker.load_annotations(['EM', 'DS', 'GP', 'GO', 'CD', 'OG'])
+
+
+    # # Initialize NER model using the provided model path
+    # print("Loading NER model and tokenizer from " + model_path_quantised)
+    # model_quantized = ORTModelForTokenClassification.from_pretrained(
+    #     model_path_quantised, file_name="model_quantized.onnx", session_options=session_options)
+    # tokenizer_quantized = AutoTokenizer.from_pretrained(
+    #     model_path_quantised,
+    #     model_max_length=512,
+    #     batch_size=1,
+    #     truncation=True
+    # )
+    # ner_quantized = pipeline(
+    #     "token-classification",
+    #     model=model_quantized,
+    #     tokenizer=tokenizer_quantized,
+    #     aggregation_strategy="max"
+    # )
+    # print("NER model and tokenizer loaded successfully.")
+
+    # # Instantiate the EntityLinker class
+    # print("Loading entity linking models.")
+    # linker = EntityLinker()
+    # loaded_data = linker.load_annotations(['EM', 'DS', 'GP', 'GO', 'CD', 'OG'])
 
 
     # Now call process_each_article with input and output directories
