@@ -1,10 +1,6 @@
 import os
 import sys
 from collections import defaultdict, OrderedDict, Counter
-from transformers import AutoTokenizer, pipeline
-from optimum.onnxruntime import ORTModelForTokenClassification
-import argparse
-from tqdm import tqdm
 import onnxruntime as ort
 from entity_linker import EntityLinker
 from entity_tagger import process_each_article, load_ner_model, batch_annotate_sentences, format_output_annotations, SECTIONS_MAP, extract_annotation
@@ -128,7 +124,7 @@ if __name__ == '__main__':
     session_options.inter_op_num_threads = 1  # Limit to a single thread
 
     # Directly assign the paths
-    input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch_2024_10_28_0.json.gz"  # Replace with your actual input file path
+    input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.jsonl.gz"  # Replace with your actual input file path
     output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/europepmc/"  # Replace with your actual output directory path
     model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"  # Replace with your actual model directory path
 

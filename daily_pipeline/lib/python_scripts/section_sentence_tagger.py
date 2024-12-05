@@ -487,9 +487,12 @@ def process_full_text(each_file):
             print('No article IDs found')
             return None
 
+        # # print(article_ids)
+        # if 'pmcid' not in article_ids or article_ids.get('pmcid') != '11376101':
+        #     return None
         # Apply section tagging
         section_tag(xml_soup)
-
+        # print(xml_soup)
         sections = {}
         keywords = []
 
@@ -544,9 +547,17 @@ def process_full_text(each_file):
         return None
 
 
-from fuzzywuzzy import fuzz, process
+# from fuzzywuzzy import fuzz, process
 
 def process_json(data, ordered_labels):
+    if not data or 'sections' not in data:
+        print("Invalid data or missing 'sections'")
+        return {}
+
+    if not ordered_labels:
+        print("No ordered labels provided for matching.")
+        return {}
+
     # Step 1: Initialize sections and directly map TITLE-GROUP to TITLE if present
     sections = data['sections']
     if "TITLE-GROUP" in sections:
@@ -563,18 +574,26 @@ def process_json(data, ordered_labels):
     # Step 4: Map unfound normalized keys to ordered labels using fuzzy matching (threshold 80%)
     mapped_labels = {}
     for normalized_key, original_key in normalized_unfound_keys.items():
+        if not normalized_key:
+            mapped_labels[original_key] = "OTHER"
+            continue  # Skip fuzzy matching for empty keys
+
         # Perform fuzzy matching
         match, score = process.extractOne(normalized_key, ordered_labels, scorer=fuzz.partial_ratio)
-        if score >= 80:
-            mapped_labels[original_key] = match
-        else:
+        if not match or score < 80:
             mapped_labels[original_key] = "OTHER"  # Use "OTHER" for no close match
+        else:
+            mapped_labels[original_key] = match
 
-    # Step 5: Structure JSON without ordering or sent_id for now
+    # # Step 6: Structure JSON without ordering or sent_id for now
     result_json = {}
     for section_key in sections:
         label = mapped_labels.get(section_key, section_key)  # Use mapped label if exists, else original
-        result_json[label] = [{"text": text} for text in sections[section_key]]
+        texts = [{"text": text} for text in sections[section_key]]
+        if label in result_json:
+            result_json[label].extend(texts)  # Append to existing list
+        else:
+            result_json[label] = texts  # Create new list
 
     # Step 6: Reorder JSON according to ordered_labels and add any unmapped sections at the end
     ordered_json = {}
@@ -583,7 +602,23 @@ def process_json(data, ordered_labels):
             ordered_json[label] = result_json.pop(label)
     ordered_json.update(result_json)  # Add remaining sections in their original order
 
-    return ordered_json
+    # Step 7: Assign unique incremental sent_id starting from 1
+    sent_id = 1
+    for section in ordered_json.values():
+        for entry in section:
+            entry["sent_id"] = sent_id
+            sent_id += 1  # Increment sent_id for each entry uniquely
+
+    # Step 7: Combine reordered sections with metadata
+    combined_data = {
+        'article_ids': data['article_ids'],
+        'open_status': data['open_status'],
+        'article_type': data['article_type'],
+        'keywords': data['keywords'],
+        'sections': ordered_json
+    }
+
+    return combined_data
 
 
 # Function to process each article and write to a compressed output file
@@ -595,7 +630,13 @@ def process_each_article(each_file_path, out_file, document_flag):
         for each_file in tqdm(files_list, desc="Processing Articles", disable=False):
             if document_flag == 'f':
                 data_temp = process_full_text(each_file)
-                data = process_json(data_temp, ordered_labels)
+                if data_temp:
+                    # print(data_temp)
+                    data = process_json(data_temp, ordered_labels)
+                    # print(data)
+                else:
+                    print("Skipping file: data_temp is None")
+                    continue
             else:
                 print('Document type not supported.')
                 continue
@@ -605,12 +646,13 @@ def process_each_article(each_file_path, out_file, document_flag):
 
 # Entry point
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process XML files and output sentences and sections.')
-    parser.add_argument('--input', help='Input XML or GZ file path', required=True)
-    parser.add_argument('--output', help='Output JSONL file path', required=True)
-    parser.add_argument('--type', help='Document type: f for full text, a for abstract', choices=['f', 'a'], required=True)
-    args = parser.parse_args()
-
-    # Call process_each_article with the full output file path
-    process_each_article(args.input, args.output, args.type)
+    process_each_article("/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.xml.gz","/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.jsonl.gz", "f")
+    # parser = argparse.ArgumentParser(description='Process XML files and output sentences and sections.')
+    # parser.add_argument('--input', help='Input XML or GZ file path', required=True)
+    # parser.add_argument('--output', help='Output JSONL file path', required=True)
+    # parser.add_argument('--type', help='Document type: f for full text, a for abstract', choices=['f', 'a'], required=True)
+    # args = parser.parse_args()
+    #
+    # # Call process_each_article with the full output file path
+    # process_each_article(args.input, args.output, args.type)
 
