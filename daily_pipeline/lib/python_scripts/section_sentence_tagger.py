@@ -646,13 +646,13 @@ def process_each_article(each_file_path, out_file, document_flag):
 
 # Entry point
 if __name__ == '__main__':
-    process_each_article("/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.xml.gz","/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.jsonl.gz", "f")
-    # parser = argparse.ArgumentParser(description='Process XML files and output sentences and sections.')
-    # parser.add_argument('--input', help='Input XML or GZ file path', required=True)
-    # parser.add_argument('--output', help='Output JSONL file path', required=True)
-    # parser.add_argument('--type', help='Document type: f for full text, a for abstract', choices=['f', 'a'], required=True)
-    # args = parser.parse_args()
-    #
-    # # Call process_each_article with the full output file path
-    # process_each_article(args.input, args.output, args.type)
+    # process_each_article("/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.xml.gz","/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.jsonl.gz", "f")
+    parser = argparse.ArgumentParser(description='Process XML files and output sentences and sections.')
+    parser.add_argument('--input', help='Input XML or GZ file path', required=True)
+    parser.add_argument('--output', help='Output JSONL file path', required=True)
+    parser.add_argument('--type', help='Document type: f for full text, a for abstract', choices=['f', 'a'], required=True)
+    args = parser.parse_args()
+
+    # Call process_each_article with the full output file path
+    process_each_article(args.input, args.output, args.type)
 
