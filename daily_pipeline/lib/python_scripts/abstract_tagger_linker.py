@@ -320,7 +320,6 @@ if __name__ == '__main__':
     # Load PROVIDER_1 (europepmc) NER model
     print("Loading PROVIDER_1 NER model.")
     # Define or import session_options before using
-    session_options = None  # Replace with actual session options if needed
     ner_quantized = load_ner_model(model_path_quantised, session_options)
 
     # Load EntityLinker with all required annotations, including primer
