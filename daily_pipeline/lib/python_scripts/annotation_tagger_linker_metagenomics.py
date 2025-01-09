@@ -404,9 +404,9 @@ if __name__ == '__main__':
         #     process_article_json_fn=process_article_generate_jsons,
         # )
 
-    ml_model_path = METAGENOMIC_MODEL_PATH_QUANTIZED
-    primer_dictionary_path = BASE_DICTIONARY_PATH
-    article_classifier_path = ARTICLE_CLASSIFIER_PATH
+    ml_model_path = os.getenv('METAGENOMIC_MODEL_PATH_QUANTIZED')
+    # primer_dictionary_path = BASE_DICTIONARY_PATH
+    article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')
 
     linker = EntityLinker()
     loaded_data = linker.load_annotations(['primer'])
@@ -416,7 +416,7 @@ if __name__ == '__main__':
 
 
     metagenomic_paths = [
-        ml_model_path + f'metagenomic-set-{i}_quantised' for i in range(1, 6)
+        ml_model_path + '/' + f'metagenomic-set-{i}_quantised' for i in range(1, 6)
     ]
 
     # Load all NER models
