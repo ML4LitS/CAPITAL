@@ -354,72 +354,24 @@ if __name__ == '__main__':
     session_options.inter_op_num_threads = 1  # Limit to a single thread
 
     # Load environment variables
-    # load_dotenv('/hps/software/users/literature/textmining-ml/.env_paths')
+    load_dotenv('/hps/software/users/literature/textmining-ml/.env_paths')
 
     ######################################################################################################
 
-    ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
-    primer_dictionary_path = '/home/stirunag/work/github/CAPITAL/normalisation/dictionary/'
-    article_classifier_path = ml_model_path+"article_classifier/"
-
-    # Instantiate the EntityLinker class
-    linker = EntityLinker()
-    loaded_data = linker.load_annotations(['primer'])
-
-    if not ml_model_path:
-        raise ValueError("Environment variable 'MODEL_PATH_QUANTIZED' not found.")
-
-
-    metagenomic_paths = [
-        ml_model_path + f'metagenomics/metagenomic-set-{i}_quantised' for i in range(1, 6)
-    ]
-
-    # Load all NER models
-    try:
-        ner_models = [load_ner_model(path, session_options) for path in metagenomic_paths]
-        print("All NER models loaded successfully.")
-    except Exception as e:
-        raise RuntimeError(f"Error loading NER models: {str(e)}")
-
-    # Load all NER models
-    try:
-        load_artifacts(article_classifier_path)
-        print("All article classifier models loaded successfully.")
-    except Exception as e:
-        raise RuntimeError(f"Error loading article classifier models: {str(e)}")
-
-
-
-    # Define paths
-    input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch_2024_10_28_0.json_old.gz"  # Replace with your actual input file path
-    output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/metagenomics/"  # Replace with your actual output directory path
-
-    # Check paths
-    if not os.path.isfile(input_path):
-        raise FileNotFoundError(f"Input file not found: {input_path}")
-    if not os.path.isdir(output_path):
-        os.makedirs(output_path, exist_ok=True)
-
-    # Process articles
-    process_each_article(
-        input_file=input_path,
-        output_dir=output_path,
-        process_article_json_fn=process_article_generate_jsons,
-    )
-
-    # ml_model_path = os.getenv('METAGENOMIC_MODEL_PATH_QUANTIZED')
-    # # primer_dictionary_path = BASE_DICTIONARY_PATH
-    # article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')
+    # ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
+    # primer_dictionary_path = '/home/stirunag/work/github/CAPITAL/normalisation/dictionary/'
+    # article_classifier_path = ml_model_path+"article_classifier/"
     #
+    # # Instantiate the EntityLinker class
     # linker = EntityLinker()
     # loaded_data = linker.load_annotations(['primer'])
     #
     # if not ml_model_path:
-    #     raise ValueError("Environment variable 'METAGENOMIC_MODEL_PATH_QUANTIZED' not found.")
+    #     raise ValueError("Environment variable 'MODEL_PATH_QUANTIZED' not found.")
     #
     #
     # metagenomic_paths = [
-    #     ml_model_path + '/' + f'metagenomic-set-{i}_quantised' for i in range(1, 6)
+    #     ml_model_path + f'metagenomics/metagenomic-set-{i}_quantised' for i in range(1, 6)
     # ]
     #
     # # Load all NER models
@@ -437,36 +389,84 @@ if __name__ == '__main__':
     #     raise RuntimeError(f"Error loading article classifier models: {str(e)}")
     #
     #
-    # parser = argparse.ArgumentParser(
-    #     description='Process section-tagged XML files and output annotations in JSON format.')
-    # parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
-    # parser.add_argument('--output', help='Output directory for JSON files', required=True)
-    # # parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
     #
-    # args = parser.parse_args()
-    # input_path = args.input
-    # output_path = args.output
-    # # model_path_quantised = args.model_path
+    # # Define paths
+    # input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch_2024_10_28_0.json_old.gz"  # Replace with your actual input file path
+    # output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/metagenomics/"  # Replace with your actual output directory path
     #
-    # # Check that input is a file
+    # # Check paths
     # if not os.path.isfile(input_path):
-    #     raise ValueError(f"Expected a file for input, but got: {input_path}")
-    #
-    # # Check if output directory exists; if not, create it
+    #     raise FileNotFoundError(f"Input file not found: {input_path}")
     # if not os.path.isdir(output_path):
-    #     print(f"Output directory '{output_path}' does not exist. Creating it.")
     #     os.makedirs(output_path, exist_ok=True)
-    # #
-    # # Ensure 'no_matches' directory exists within the output directory
-    # no_match_dir = os.path.join(output_path, "no_matches")
-    # os.makedirs(no_match_dir, exist_ok=True)
-    # # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
-    # #
+    #
+    # # Process articles
     # process_each_article(
     #     input_file=input_path,
     #     output_dir=output_path,
     #     process_article_json_fn=process_article_generate_jsons,
     # )
+############################################################################################################
+    ml_model_path = os.getenv('METAGENOMIC_MODEL_PATH_QUANTIZED')
+    # primer_dictionary_path = BASE_DICTIONARY_PATH
+    article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')
+
+    linker = EntityLinker()
+    loaded_data = linker.load_annotations(['primer'])
+
+    if not ml_model_path:
+        raise ValueError("Environment variable 'METAGENOMIC_MODEL_PATH_QUANTIZED' not found.")
+
+
+    metagenomic_paths = [
+        ml_model_path + '/' + f'metagenomic-set-{i}_quantised' for i in range(1, 6)
+    ]
+
+    # Load all NER models
+    try:
+        ner_models = [load_ner_model(path, session_options) for path in metagenomic_paths]
+        print("All NER models loaded successfully.")
+    except Exception as e:
+        raise RuntimeError(f"Error loading NER models: {str(e)}")
+
+    # Load all NER models
+    try:
+        load_artifacts(article_classifier_path)
+        print("All article classifier models loaded successfully.")
+    except Exception as e:
+        raise RuntimeError(f"Error loading article classifier models: {str(e)}")
+
+
+    parser = argparse.ArgumentParser(
+        description='Process section-tagged XML files and output annotations in JSON format.')
+    parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
+    parser.add_argument('--output', help='Output directory for JSON files', required=True)
+    # parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
+
+    args = parser.parse_args()
+    input_path = args.input
+    output_path = args.output
+    # model_path_quantised = args.model_path
+
+    # Check that input is a file
+    if not os.path.isfile(input_path):
+        raise ValueError(f"Expected a file for input, but got: {input_path}")
+
+    # Check if output directory exists; if not, create it
+    if not os.path.isdir(output_path):
+        print(f"Output directory '{output_path}' does not exist. Creating it.")
+        os.makedirs(output_path, exist_ok=True)
     #
+    # Ensure 'no_matches' directory exists within the output directory
+    no_match_dir = os.path.join(output_path, "no_matches")
+    os.makedirs(no_match_dir, exist_ok=True)
+    # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
+    #
+    process_each_article(
+        input_file=input_path,
+        output_dir=output_path,
+        process_article_json_fn=process_article_generate_jsons,
+    )
+
 
 
