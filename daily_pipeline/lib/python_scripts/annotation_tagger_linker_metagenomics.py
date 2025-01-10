@@ -443,7 +443,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     input_path = args.input
     output_path = args.output
-    model_path_quantised = args.model_path
+    # model_path_quantised = args.model_path
 
     # Check that input is a file
     if not os.path.isfile(input_path):

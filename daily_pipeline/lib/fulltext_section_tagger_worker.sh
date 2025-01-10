@@ -34,7 +34,7 @@ file=$(find "$FULLTEXT_SOURCE_DIR" -type f -name "patch-*.xml.gz" | sort -V | se
 file_number=$(echo "$file" | grep -oP '(?<=patch-\d{2}-\d{2}-\d{4}-)\d+(?=\.xml\.gz)')
 
 # Define the output file path
-output_file="${TODAY_OUTPUT_DIR}/fulltext/sections/patch_${YESTERDAY_OUTPUT}_${file_number}.jsonl.gz"
+output_file="${TODAY_OUTPUT_DIR}/fulltext/sections/patch-${YESTERDAY_OUTPUT}-${file_number}.jsonl.gz"
 
 # Debugging: Print paths to confirm correctness
 echo "Running Python script with paths:"

@@ -344,8 +344,8 @@ def process_each_article(input_file, output_dir, process_article_json_fn):
         None
     """
     input_filename = os.path.basename(input_file).replace(".jsonl.gz", "")
-    output_file = os.path.join(output_dir, f"{input_filename}.json")
-    no_match_file_path = os.path.join(output_dir, "no_matches", f"{input_filename}_no_match.json")
+    output_file = os.path.join(output_dir, f"{input_filename}.api.json")
+    no_match_file_path = os.path.join(output_dir, "no_matches", f"{input_filename}_no_match.api.json")
 
     # Ensure the no_matches directory exists
     os.makedirs(os.path.join(output_dir, "no_matches"), exist_ok=True)
