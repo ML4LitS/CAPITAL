@@ -308,7 +308,7 @@ if __name__ == '__main__':
 
     # Generate output file name
     output_fname = os.path.basename(input_path).replace(".abstract.gz", "")
-    output_file = os.path.join(output_path, f"{output_fname}.json")
+    output_file = os.path.join(output_path, f"{output_fname}.api.json")
 
     # Check input file and output directory
     if not os.path.isfile(input_path):
