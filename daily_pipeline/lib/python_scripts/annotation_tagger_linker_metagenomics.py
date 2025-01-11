@@ -200,7 +200,7 @@ def fetch_zooma_mapping(term):
         print(f"Error fetching term '{term}': {e}")
         return term, "#"
 
-def get_batch_mappings_from_zooma(terms, max_workers=5):
+def get_batch_mappings_from_zooma(terms, max_workers=3):
     """
     Fetch ontology mappings for a list of terms from the ZOOMA API using parallel requests.
 
@@ -313,7 +313,7 @@ def process_article_generate_jsons(article_data):
 
     # Classify the article based on the abstract
     predicted_label, proba = classify_abstract(abstract_text)
-    if predicted_label != "metagenomics" and proba > 0.85:
+    if predicted_label != "metagenomics" or proba > 0.85:
         return None, None  # Skip NER tagging if label is "other"
     else:
         print([article_type, open_status, pmcid, predicted_label, proba])

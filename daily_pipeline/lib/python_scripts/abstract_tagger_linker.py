@@ -10,6 +10,7 @@ import re
 from collections import defaultdict, OrderedDict, Counter
 from tqdm import tqdm
 import onnxruntime as ort
+from datetime import datetime
 
 
 PROVIDER = "europepmc"
@@ -305,9 +306,15 @@ if __name__ == '__main__':
     output_path = args.output
     model_path_quantised = args.model_path
 
+    input_basename = os.path.basename(input_path)
+    # Replace ".abstract.gz" and convert date to YYYY_MM_DD format
+    date_part = input_basename.split("-")[1]  # Assuming date is the second part of the filename
+    formatted_date = datetime.strptime(date_part, "%d-%m-%Y").strftime("%Y_%m_%d")
 
     # Generate output file name
-    output_fname = os.path.basename(input_path).replace(".abstract.gz", "")
+    # output_fname = os.path.basename(input_path).replace(".abstract.gz", "")
+    output_fname = input_basename.replace(date_part, formatted_date).replace(".abstract.gz", "")
+    # output_file = os.path.join(output_path, f"{output_fname}.api.json")
     output_file = os.path.join(output_path, f"{output_fname}.api.json")
 
     # Check input file and output directory
