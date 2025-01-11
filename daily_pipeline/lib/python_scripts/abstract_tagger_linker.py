@@ -308,12 +308,10 @@ if __name__ == '__main__':
 
     input_basename = os.path.basename(input_path)
     # Replace ".abstract.gz" and convert date to YYYY_MM_DD format
-    date_part = input_basename.split("-")[1]  # Assuming date is the second part of the filename
-    formatted_date = datetime.strptime(date_part, "%d-%m-%Y").strftime("%Y_%m_%d")
-
-    # Generate output file name
-    # output_fname = os.path.basename(input_path).replace(".abstract.gz", "")
-    output_fname = input_basename.replace(date_part, formatted_date).replace(".abstract.gz", "")
+    patch_part, date_str, index_part = input_basename.rsplit("-", 2)
+    formatted_date = datetime.strptime(date_str, "%d-%m-%Y").strftime("%Y_%m_%d")
+    index_str = index_part.replace(".abstract.gz", "")
+    output_fname = f"{patch_part}-{formatted_date}-{index_str}"
     # output_file = os.path.join(output_path, f"{output_fname}.api.json")
     output_file = os.path.join(output_path, f"{output_fname}.api.json")
 
