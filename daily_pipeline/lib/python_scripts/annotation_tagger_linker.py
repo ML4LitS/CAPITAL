@@ -14,7 +14,7 @@ PROVIDER = "europepmc"
 
 # Mapping from abbreviation to full form
 ENTITY_TYPE_MAP_1 = {
-    "EM": "methods", #methods
+    "EM": "methods", #exp_methods
     "DS": "disease",
     "GP": "gene_protein",
     "GO": "go_term",

@@ -16,7 +16,7 @@ import onnxruntime as ort
 
 
 
-PROVIDER = "metagenomics"
+PROVIDER = "Metagenomics"
 
 ENTITY_TYPE_MAP_2 = {
     "sample-material": "Sample-Material",

@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 # Global variables for models and artifacts
-PROVIDER = "metagenomics"
+PROVIDER = "Metagenomics"
 sim_model = None
 sim_tokenizer = None
 label_encoder = None
