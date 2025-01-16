@@ -313,8 +313,10 @@ def process_article_generate_jsons(article_data):
 
     # Classify the article based on the abstract
     predicted_label, proba = classify_abstract(abstract_text)
-    if predicted_label != "metagenomics" or proba > 0.85:
-        return None, None  # Skip NER tagging if label is "other"
+    # if predicted_label != "metagenomics" or proba > 0.80:
+    if predicted_label != "metagenomics" or (predicted_label == "metagenomics" and proba <= 0.85):
+        return None, None  # Skip NER tagging if label is "
+    # other"
     else:
         print([article_type, open_status, pmcid, predicted_label, proba])
 
@@ -328,7 +330,7 @@ def process_article_generate_jsons(article_data):
 
             section = SECTIONS_MAP.get(section_key, "Other")
             # Pass the NER model and parallel flag to batch_annotate_sentences
-            batch_annotations = batch_annotate_sentences(sentences, section, ner_model=metagenomic_model, extract_annotation_fn=extract_annotation)
+            batch_annotations = batch_annotate_sentences(sentences, section, ner_model=metagenomic_model, extract_annotation_fn=extract_annotation, provider=PROVIDER)
             if not batch_annotations:
                 continue
 
@@ -353,8 +355,7 @@ if __name__ == '__main__':
     session_options.intra_op_num_threads = 1  # Limit to a single thread
     session_options.inter_op_num_threads = 1  # Limit to a single thread
 
-    # Load environment variables
-    load_dotenv('/hps/software/users/literature/textmining-ml/.env_paths')
+
 
     ######################################################################################################
 
@@ -407,6 +408,9 @@ if __name__ == '__main__':
     #     process_article_json_fn=process_article_generate_jsons,
     # )
 ############################################################################################################
+# Load environment variables
+    load_dotenv('/hps/software/users/literature/textmining-ml/.env_paths')
+
     ml_model_path = os.getenv('METAGENOMIC_MODEL_PATH_QUANTIZED')
     # primer_dictionary_path = BASE_DICTIONARY_PATH
     article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')

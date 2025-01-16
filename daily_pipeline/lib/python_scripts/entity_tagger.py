@@ -146,8 +146,10 @@ def get_word_position(sent_id, sentence_text, char_start):
 def get_prefix_postfix(sentence_text, char_start, char_end, num_words=3, max_chars=30):
     """
     Extract prefix and postfix based on word positions with constraints:
-    - Returns up to `num_words` before and after the target term.
-    - Ensures each prefix and postfix does not exceed `max_chars`.
+    - If `num_words` is "ALL", prefix will include all words from the beginning of the sentence
+      to the target term, and postfix will include all words from the target term to the end of the sentence.
+    - Otherwise, returns up to `num_words` before and after the target term.
+    - Ensures each prefix and postfix does not exceed `max_chars` when `num_words` is not "ALL".
     """
     words = sentence_text.split()
     word_positions = [sentence_text.find(word) for word in words]
@@ -161,24 +163,44 @@ def get_prefix_postfix(sentence_text, char_start, char_end, num_words=3, max_cha
 
     prefix, postfix = "", ""
     if word_index is not None:
-        # Extract prefix words up to `num_words` or `max_chars`
-        prefix_words = words[max(0, word_index - num_words):word_index]
-        prefix = ' '.join(prefix_words)
-        if len(prefix) > max_chars:
-            prefix = prefix[-max_chars:]  # Truncate to the last `max_chars` characters
+        if num_words == "ALL":
+            # Extract all words from the start of the sentence to the target term
+            prefix = ' '.join(words[:word_index])
 
-        # Extract postfix words up to `num_words` or `max_chars`
-        postfix_words = words[word_index + 1:word_index + 1 + num_words]
-        postfix = ' '.join(postfix_words)
-        if len(postfix) > max_chars:
-            postfix = postfix[:max_chars]  # Truncate to the first `max_chars` characters
+            # Extract all words from the target term to the end of the sentence
+            postfix = ' '.join(words[word_index + 1:])
+        else:
+            # Extract prefix words up to `num_words` or `max_chars`
+            prefix_words = words[max(0, word_index - num_words):word_index]
+            prefix = ' '.join(prefix_words)
+            if len(prefix) > max_chars:
+                prefix = prefix[-max_chars:]  # Truncate to the last `max_chars` characters
+
+            # Extract postfix words up to `num_words` or `max_chars`
+            postfix_words = words[word_index + 1:word_index + 1 + num_words]
+            postfix = ' '.join(postfix_words)
+            if len(postfix) > max_chars:
+                postfix = postfix[:max_chars]  # Truncate to the first `max_chars` characters
 
     return prefix, postfix
 
-def extract_annotation(sentence_id, sentence_text, entity, section):
+
+def extract_annotation(sentence_id, sentence_text, entity, section, provider):
+    if section.upper() == "OTHER":  # Skip sections labeled as "OTHER"
+        return None
+
     term = sentence_text[entity['start']:entity['end']]
-    position = get_word_position(sentence_id, sentence_text, entity['start'])
-    prefix, postfix = get_prefix_postfix(sentence_text, entity['start'], entity['end'])
+
+    # Determine the parameters based on the provider
+    if provider == "Metagenomics":
+        num_words = "ALL"
+        position = "1.0"
+    else:
+        num_words = 3  # Default number of words
+        position = get_word_position(sentence_id, sentence_text, entity['start'])
+
+    # Call get_prefix_postfix with the determined num_words
+    prefix, postfix = get_prefix_postfix(sentence_text, entity['start'], entity['end'], num_words=num_words)
     full_entity_type = entity["entity_group"]
 
     return {
@@ -195,23 +217,28 @@ def batch_annotate_sentences(
     section,
     ner_model,
     extract_annotation_fn: Callable,
+    provider=None,  # Add provider parameter
     batch_size=BATCH_SIZE_,
     parallel=PARALLEL_
 ):
     """
-    Annotate sentences in batches
+    Annotate sentences in batches.
 
     Args:
         sentences (list): List of sentences to process.
         section (str): Section name to include in annotations.
         ner_model (Callable): NER model or pipeline for extracting entities.
         extract_annotation_fn (Callable): Function to extract annotations.
+        provider (str, optional): Provider name to pass to the annotation function (default: None).
         batch_size (int): Number of sentences per batch (default: 4).
         parallel (bool): Whether to process sentences in parallel (default: True).
 
     Returns:
         list: Annotated sentences.
     """
+    if section.upper() == "OTHER":  # Skip processing for "OTHER" sections
+        return []
+
     annotations = []
 
     def batch_sentences(iterable, n):
@@ -233,7 +260,7 @@ def batch_annotate_sentences(
                 sentence_id = sentence_batch[i]["sent_id"]
                 sentence_text = sentence_batch[i]["text"]
                 for entity in sentence_entities:
-                    annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section))
+                    annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
     else:
         # Process sentences individually
         for sentence in sentences:
@@ -241,9 +268,116 @@ def batch_annotate_sentences(
             sentence_id = sentence["sent_id"]
             sentence_text = sentence["text"]
             for entity in ner_results:
-                annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section))
+                annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
 
     return annotations
+
+# def get_prefix_postfix(sentence_text, char_start, char_end, num_words=3, max_chars=30):
+#     """
+#     Extract prefix and postfix based on word positions with constraints:
+#     - Returns up to `num_words` before and after the target term.
+#     - Ensures each prefix and postfix does not exceed `max_chars`.
+#     """
+#     words = sentence_text.split()
+#     word_positions = [sentence_text.find(word) for word in words]
+#
+#     # Identify the word index for the starting character of the entity
+#     word_index = None
+#     for idx, start in enumerate(word_positions):
+#         if start == char_start:
+#             word_index = idx
+#             break
+#
+#     prefix, postfix = "", ""
+#     if word_index is not None:
+#         # Extract prefix words up to `num_words` or `max_chars`
+#         prefix_words = words[max(0, word_index - num_words):word_index]
+#         prefix = ' '.join(prefix_words)
+#         if len(prefix) > max_chars:
+#             prefix = prefix[-max_chars:]  # Truncate to the last `max_chars` characters
+#
+#         # Extract postfix words up to `num_words` or `max_chars`
+#         postfix_words = words[word_index + 1:word_index + 1 + num_words]
+#         postfix = ' '.join(postfix_words)
+#         if len(postfix) > max_chars:
+#             postfix = postfix[:max_chars]  # Truncate to the first `max_chars` characters
+#
+#     return prefix, postfix
+
+# def extract_annotation(sentence_id, sentence_text, entity, section):
+#     if section.upper() == "OTHER":  # Skip sections labeled as "OTHER"
+#         return None
+#     term = sentence_text[entity['start']:entity['end']]
+#     position = get_word_position(sentence_id, sentence_text, entity['start'])
+#     prefix, postfix = get_prefix_postfix(sentence_text, entity['start'], entity['end'])
+#     full_entity_type = entity["entity_group"]
+#
+#     return {
+#         "type": full_entity_type,
+#         "position": position,
+#         "prefix": prefix,
+#         "exact": term,
+#         "section": section,
+#         "postfix": postfix
+#     }
+
+# def batch_annotate_sentences(
+#     sentences,
+#     section,
+#     ner_model,
+#     extract_annotation_fn: Callable,
+#     batch_size=BATCH_SIZE_,
+#     parallel=PARALLEL_
+# ):
+#     """
+#     Annotate sentences in batches
+#
+#     Args:
+#         sentences (list): List of sentences to process.
+#         section (str): Section name to include in annotations.
+#         ner_model (Callable): NER model or pipeline for extracting entities.
+#         extract_annotation_fn (Callable): Function to extract annotations.
+#         batch_size (int): Number of sentences per batch (default: 4).
+#         parallel (bool): Whether to process sentences in parallel (default: True).
+#
+#     Returns:
+#         list: Annotated sentences.
+#     """
+#     if section.upper() == "OTHER":  # Skip processing for "OTHER" sections
+#         return []
+#
+#     annotations = []
+#
+#     def batch_sentences(iterable, n):
+#         """Helper function to batch sentences into chunks of size n."""
+#         it = iter(iterable)
+#         while True:
+#             batch = list(islice(it, n))
+#             if not batch:
+#                 break
+#             yield batch
+#
+#     if parallel:
+#         # Process in batches
+#         for sentence_batch in batch_sentences(sentences, n=batch_size):
+#             batched_text = [s["text"] for s in sentence_batch]
+#             ner_results = ner_model(batched_text)
+#
+#             for i, sentence_entities in enumerate(ner_results):
+#                 sentence_id = sentence_batch[i]["sent_id"]
+#                 sentence_text = sentence_batch[i]["text"]
+#                 for entity in sentence_entities:
+#                     annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section))
+#     else:
+#         # Process sentences individually
+#         for sentence in sentences:
+#             ner_results = ner_model([sentence["text"]])[0]
+#             sentence_id = sentence["sent_id"]
+#             sentence_text = sentence["text"]
+#             for entity in ner_results:
+#                 annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section))
+#
+#     return annotations
 
 
 def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
