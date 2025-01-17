@@ -136,11 +136,16 @@ if __name__ == '__main__':
     session_options.intra_op_num_threads = 1  # Limit to a single thread
     session_options.inter_op_num_threads = 1  # Limit to a single thread
 
-##################################################################################################################################
-    # # Directly assign the paths
-    input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-2025_01_14-24.jsonl.gz" # Replace with your actual input file path
-    output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/europepmc/"  # Replace with your actual output directory path
-    model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"  # Replace with your actual model directory path
+    parser = argparse.ArgumentParser(
+        description='Process section-tagged XML files and output annotations in JSON format.')
+    parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
+    parser.add_argument('--output', help='Output directory for JSON files', required=True)
+    parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
+
+    args = parser.parse_args()
+    input_path = args.input
+    output_path = args.output
+    model_path_quantised = args.model_path
 
     # Check that input is a file
     if not os.path.isfile(input_path):
@@ -150,12 +155,12 @@ if __name__ == '__main__':
     if not os.path.isdir(output_path):
         print(f"Output directory '{output_path}' does not exist. Creating it.")
         os.makedirs(output_path, exist_ok=True)
-
+    #
     # Ensure 'no_matches' directory exists within the output directory
     no_match_dir = os.path.join(output_path, "no_matches")
     os.makedirs(no_match_dir, exist_ok=True)
-    no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
-
+    # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
+    #
     # Load PROVIDER_1 (europepmc) NER model
     print("Loading NER model and tokenizer from " + model_path_quantised)
     ner_quantized = load_ner_model(model_path_quantised, session_options)
@@ -171,17 +176,11 @@ if __name__ == '__main__':
         process_article_json_fn=process_article_generate_jsons,
     )
 
-#################################################################################################################
-    # parser = argparse.ArgumentParser(
-    #     description='Process section-tagged XML files and output annotations in JSON format.')
-    # parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
-    # parser.add_argument('--output', help='Output directory for JSON files', required=True)
-    # parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
-    #
-    # args = parser.parse_args()
-    # input_path = args.input
-    # output_path = args.output
-    # model_path_quantised = args.model_path
+##################################################################################################################################
+    # # # Directly assign the paths
+    # input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-2025_01_14-24.jsonl.gz" # Replace with your actual input file path
+    # output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/europepmc/"  # Replace with your actual output directory path
+    # model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"  # Replace with your actual model directory path
     #
     # # Check that input is a file
     # if not os.path.isfile(input_path):
@@ -191,12 +190,12 @@ if __name__ == '__main__':
     # if not os.path.isdir(output_path):
     #     print(f"Output directory '{output_path}' does not exist. Creating it.")
     #     os.makedirs(output_path, exist_ok=True)
-    # #
+    #
     # # Ensure 'no_matches' directory exists within the output directory
     # no_match_dir = os.path.join(output_path, "no_matches")
     # os.makedirs(no_match_dir, exist_ok=True)
-    # # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
-    # #
+    # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
+    #
     # # Load PROVIDER_1 (europepmc) NER model
     # print("Loading NER model and tokenizer from " + model_path_quantised)
     # ner_quantized = load_ner_model(model_path_quantised, session_options)
@@ -211,5 +210,7 @@ if __name__ == '__main__':
     #     output_dir=output_path,
     #     process_article_json_fn=process_article_generate_jsons,
     # )
+
+#################################################################################################################
 
 
