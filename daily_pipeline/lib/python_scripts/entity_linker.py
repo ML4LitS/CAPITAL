@@ -438,7 +438,7 @@ class EntityLinker:
                 return "#"
         elif entity_group == 'GO':
             ent_id = ent_id.replace('_', ':')
-            return f"http://identifiers.org/go/{ent_id}"
+            return f"http://identifiers.org/{ent_id}"
         elif entity_group == 'primer':
             return f"http://probebase.csb.univie.ac.at/pb_report/probe/{ent_id}"
         # Default mappings

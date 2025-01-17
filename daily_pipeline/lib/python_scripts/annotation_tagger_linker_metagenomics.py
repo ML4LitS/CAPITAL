@@ -5,7 +5,7 @@ import requests
 import argparse
 import onnxruntime as ort
 from concurrent.futures import ThreadPoolExecutor
-
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from dotenv import load_dotenv
 
 from entity_tagger import load_ner_model, load_artifacts, classify_abstract, process_each_article, batch_annotate_sentences, extract_annotation, format_output_annotations, SECTIONS_MAP
@@ -25,10 +25,15 @@ sim_tokenizer = None
 label_encoder = None
 clf = None
 
-# Set ONNX runtime session options
-session_options = ort.SessionOptions()
-session_options.intra_op_num_threads = 1  # Limit to a single thread
-session_options.inter_op_num_threads = 1  # Limit to a single thread
+
+
+xtrms = ['whole','abbr.','abbr','user','users','SI','`-end','-end','total','slide','slides','did not']
+additional_blacklist = ['.4%', 'E8', '11.1%']
+combined_blacklist = set(xtrms + additional_blacklist)
+
+symbs = [")","(","≥","≤",">","<","~","/",".","-","%","=","+",":","%","°C","ºC","–","±","_","[","]","″","′","’","'","‐"]
+symbs2 = ["≤","≥",">","<","~","/",".","-","=","±",":","–","_","″","′","’","'","‐"]
+
 
 ENTITY_TYPE_MAP = {
     # "sample-material": "Sample-Material",
@@ -54,20 +59,122 @@ ENTITY_TYPE_MAP = {
 #     """Map abbreviation to full form."""
 #     return ENTITY_TYPE_MAP.get(abbrev, abbrev.lower())
 
+# def normalize_tag(terms, entity_type, linker=None):
+#     """
+#     Normalize a list of terms to generate URIs based on the entity type.
+#     Combines batch processing for ZOOMA with special handling for specific entities.
+#
+#     Args:
+#         terms (list): List of terms to normalize.
+#         entity_type (str): The entity type (e.g., 'primer', 'kit', 'date').
+#         linker (object): Linker object for term mapping (required for primer entities).
+#
+#     Returns:
+#         dict: A mapping of terms to (grounded_code, uri) pairs.
+#     """
+#     result = {}
+#
+#     # Initialize sets for different entity types
+#     zooma_terms = set()
+#     kit_terms = set()
+#     date_terms = set()
+#     primer_terms = set()
+#
+#     # Classify terms based on entity type
+#     for term in terms:
+#         if len(term)>2 or term in ['.4%', 'E8', '11.1%']:
+#             if entity_type == "kit":
+#                 kit_terms.add(term)
+#             elif entity_type == "date":
+#                 date_terms.add(term)
+#             elif entity_type == "primer":
+#                 primer_terms.add(term)
+#             else:
+#                 zooma_terms.add(term)
+#
+#     # Handle ZOOMA-eligible terms
+#     if zooma_terms:
+#         zooma_uris = get_batch_mappings_from_zooma(list(zooma_terms))
+#         for term in zooma_terms:
+#             result[term] = (term, zooma_uris.get(term, "#"))  # Default to # if no mapping
+#
+#     # Handle 'kit' entities
+#     if kit_terms:
+#         for term in kit_terms:
+#             result[term] = (term, generate_kit_url(term))
+#
+#     # Handle 'date' entities
+#     if date_terms:
+#         month_to_code = {
+#             "January": "80", "February": "81", "March": "82", "April": "83", "May": "84",
+#             "June": "85", "July": "86", "August": "87", "September": "88", "October": "89",
+#             "November": "91", "December": "92"
+#         }
+#         month_pattern = r"\b(" + "|".join(month_to_code.keys()) + r")\b"
+#
+#         for term in date_terms:
+#             # Search for the first occurrence of a month in the term
+#             match = re.search(month_pattern, term, re.IGNORECASE)
+#             if match:
+#                 month = match.group(1).capitalize()  # Extract the matched month and capitalize it
+#                 uri = f"http://purl.obolibrary.org/obo/NCIT_C1061{month_to_code[month]}"
+#                 result[term] = (month, uri)  # Use the month as the grounded term
+#             else:
+#                 result[term] = (term, "#")  # Default URI if no month is found
+#
+#     # Handle 'primer' entities
+#     if primer_terms and linker:
+#         primer_uris = handle_primer_entities(list(primer_terms), linker)
+#         for term in primer_terms:
+#             result[term] = (term, primer_uris.get(term, "#"))
+#
+#     # Ensure all terms are accounted for with a default value
+#     for term in terms:
+#         if term not in result:
+#             result[term] = (term, "#")
+#
+# # Final checking of unmapped terms especially Primer and Date
+#     unmapped_terms = [term for term, (grounded_code, uri) in result.items() if uri == '#']
+#
+#     # Send unmapped terms to ZOOMA
+#     if unmapped_terms:
+#         zooma_uris = get_batch_mappings_from_zooma(unmapped_terms)
+#         for term in unmapped_terms:
+#             if zooma_uris.get(term, '#') != '#':
+#                 result[term] = (term, zooma_uris[term])
+#
+#     return result
+
 def normalize_tag(terms, entity_type, linker=None):
     """
     Normalize a list of terms to generate URIs based on the entity type.
-    Combines batch processing for ZOOMA with special handling for specific entities.
-
-    Args:
-        terms (list): List of terms to normalize.
-        entity_type (str): The entity type (e.g., 'primer', 'kit', 'date').
-        linker (object): Linker object for term mapping (required for primer entities).
-
-    Returns:
-        dict: A mapping of terms to (grounded_code, uri) pairs.
+    Applies special handling:
+    - Skips normalization for blacklist/stopwords.
+    - Removes specified symbols for non-primer entities.
+    - Processes only terms longer than two characters.
     """
     result = {}
+    stpwrds = list(ENGLISH_STOP_WORDS)
+    stpwrds2 = set(stpwrds + [word.title() for word in stpwrds])
+
+    # Filter and preprocess terms based on blacklist, stopwords, and symbols
+    filtered_terms = []
+    for term in terms:
+        # Skip normalization if term is blacklisted or a stopword
+        if term in combined_blacklist or term in stpwrds2 or term.isdigit() or len(term)<3:
+            result[term] = (term, "#")
+            continue
+
+        # For non-primer entities, remove symbols from the term
+        if entity_type != "primer":
+            for symbol in symbs + symbs2:
+                term = term.replace(symbol, "")
+            # If removal leaves an empty term, normalize to "#"
+            if not term.strip():
+                result[term] = (term, "#")
+                continue
+
+        filtered_terms.append(term)
 
     # Initialize sets for different entity types
     zooma_terms = set()
@@ -75,9 +182,9 @@ def normalize_tag(terms, entity_type, linker=None):
     date_terms = set()
     primer_terms = set()
 
-    # Classify terms based on entity type
-    for term in terms:
-        if len(term)>2 or term in ['.4%', 'E8', '11.1%']:
+    # Classify terms based on entity type, processing only those >2 characters
+    for term in filtered_terms:
+        if len(term) > 2:  # Process only terms longer than two characters
             if entity_type == "kit":
                 kit_terms.add(term)
             elif entity_type == "date":
@@ -108,14 +215,13 @@ def normalize_tag(terms, entity_type, linker=None):
         month_pattern = r"\b(" + "|".join(month_to_code.keys()) + r")\b"
 
         for term in date_terms:
-            # Search for the first occurrence of a month in the term
             match = re.search(month_pattern, term, re.IGNORECASE)
             if match:
-                month = match.group(1).capitalize()  # Extract the matched month and capitalize it
+                month = match.group(1).capitalize()
                 uri = f"http://purl.obolibrary.org/obo/NCIT_C1061{month_to_code[month]}"
-                result[term] = (month, uri)  # Use the month as the grounded term
+                result[term] = (month, uri)
             else:
-                result[term] = (term, "#")  # Default URI if no month is found
+                result[term] = (term, "#")
 
     # Handle 'primer' entities
     if primer_terms and linker:
@@ -123,15 +229,13 @@ def normalize_tag(terms, entity_type, linker=None):
         for term in primer_terms:
             result[term] = (term, primer_uris.get(term, "#"))
 
-    # Ensure all terms are accounted for with a default value
+    # Ensure all terms have an entry; default to "#"
     for term in terms:
         if term not in result:
             result[term] = (term, "#")
 
-# Final checking of unmapped terms especially Primer and Date
+    # Final check for unmapped terms (send them to ZOOMA if necessary)
     unmapped_terms = [term for term, (grounded_code, uri) in result.items() if uri == '#']
-
-    # Send unmapped terms to ZOOMA
     if unmapped_terms:
         zooma_uris = get_batch_mappings_from_zooma(unmapped_terms)
         for term in unmapped_terms:
@@ -304,6 +408,14 @@ def process_article_generate_jsons(article_data):
     if not pmcid and not ft_id:
         return None, None  # Skip article if no pmcid or ft_id
 
+    if ft_id and 'PPR' not in ft_id:
+        return None, None  # Skip article if not a preprint ft_id
+
+    if pmcid:
+        # If pmcid doesn't start with "PMC" and is purely numeric, prepend "PMC"
+        if not pmcid.startswith("PMC") and pmcid.isdigit():
+            pmcid = "PMC" + pmcid
+
     # Retrieve and join sentences from the ABSTRACT section
     abstract_section = article_data.get("sections", {}).get("ABSTRACT", [])
     # Ensure each item in abstract_section is a string by extracting the 'text' key
@@ -329,8 +441,13 @@ def process_article_generate_jsons(article_data):
                 continue  # Skip all sections except the specified ones
 
             section = SECTIONS_MAP.get(section_key, "Other")
+
+            if section == "Other":
+                continue
+
             # Pass the NER model and parallel flag to batch_annotate_sentences
             batch_annotations = batch_annotate_sentences(sentences, section, ner_model=metagenomic_model, extract_annotation_fn=extract_annotation, provider=PROVIDER)
+
             if not batch_annotations:
                 continue
 
@@ -359,71 +476,20 @@ if __name__ == '__main__':
 
     ######################################################################################################
 
-    # ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
-    # primer_dictionary_path = '/home/stirunag/work/github/CAPITAL/normalisation/dictionary/'
-    # article_classifier_path = ml_model_path+"article_classifier/"
-    #
-    # # Instantiate the EntityLinker class
-    # linker = EntityLinker()
-    # loaded_data = linker.load_annotations(['primer'])
-    #
-    # if not ml_model_path:
-    #     raise ValueError("Environment variable 'MODEL_PATH_QUANTIZED' not found.")
-    #
-    #
-    # metagenomic_paths = [
-    #     ml_model_path + f'metagenomics/metagenomic-set-{i}_quantised' for i in range(1, 6)
-    # ]
-    #
-    # # Load all NER models
-    # try:
-    #     ner_models = [load_ner_model(path, session_options) for path in metagenomic_paths]
-    #     print("All NER models loaded successfully.")
-    # except Exception as e:
-    #     raise RuntimeError(f"Error loading NER models: {str(e)}")
-    #
-    # # Load all NER models
-    # try:
-    #     load_artifacts(article_classifier_path)
-    #     print("All article classifier models loaded successfully.")
-    # except Exception as e:
-    #     raise RuntimeError(f"Error loading article classifier models: {str(e)}")
-    #
-    #
-    #
-    # # Define paths
-    # input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch_2024_10_28_0.json_old.gz"  # Replace with your actual input file path
-    # output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/metagenomics/"  # Replace with your actual output directory path
-    #
-    # # Check paths
-    # if not os.path.isfile(input_path):
-    #     raise FileNotFoundError(f"Input file not found: {input_path}")
-    # if not os.path.isdir(output_path):
-    #     os.makedirs(output_path, exist_ok=True)
-    #
-    # # Process articles
-    # process_each_article(
-    #     input_file=input_path,
-    #     output_dir=output_path,
-    #     process_article_json_fn=process_article_generate_jsons,
-    # )
-############################################################################################################
-# Load environment variables
-    load_dotenv('/hps/software/users/literature/textmining-ml/.env_paths')
+    ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
+    primer_dictionary_path = '/home/stirunag/work/github/CAPITAL/normalisation/dictionary/'
+    article_classifier_path = ml_model_path+"article_classifier/"
 
-    ml_model_path = os.getenv('METAGENOMIC_MODEL_PATH_QUANTIZED')
-    # primer_dictionary_path = BASE_DICTIONARY_PATH
-    article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')
-
+    # Instantiate the EntityLinker class
     linker = EntityLinker()
     loaded_data = linker.load_annotations(['primer'])
 
     if not ml_model_path:
-        raise ValueError("Environment variable 'METAGENOMIC_MODEL_PATH_QUANTIZED' not found.")
+        raise ValueError("Environment variable 'MODEL_PATH_QUANTIZED' not found.")
 
 
     metagenomic_paths = [
-        ml_model_path + '/' + f'metagenomic-set-{i}_quantised' for i in range(1, 6)
+        ml_model_path + f'metagenomics/metagenomic-set-{i}_quantised' for i in range(1, 6)
     ]
 
     # Load all NER models
@@ -441,36 +507,87 @@ if __name__ == '__main__':
         raise RuntimeError(f"Error loading article classifier models: {str(e)}")
 
 
-    parser = argparse.ArgumentParser(
-        description='Process section-tagged XML files and output annotations in JSON format.')
-    parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
-    parser.add_argument('--output', help='Output directory for JSON files', required=True)
-    # parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
 
-    args = parser.parse_args()
-    input_path = args.input
-    output_path = args.output
-    # model_path_quantised = args.model_path
+    # Define paths
+    input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-2025_01_14-24.jsonl.gz"  # Replace with your actual input file path
+    output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/metagenomics/"  # Replace with your actual output directory path
 
-    # Check that input is a file
+    # Check paths
     if not os.path.isfile(input_path):
-        raise ValueError(f"Expected a file for input, but got: {input_path}")
-
-    # Check if output directory exists; if not, create it
+        raise FileNotFoundError(f"Input file not found: {input_path}")
     if not os.path.isdir(output_path):
-        print(f"Output directory '{output_path}' does not exist. Creating it.")
         os.makedirs(output_path, exist_ok=True)
-    #
-    # Ensure 'no_matches' directory exists within the output directory
-    no_match_dir = os.path.join(output_path, "no_matches")
-    os.makedirs(no_match_dir, exist_ok=True)
-    # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
-    #
+
+    # Process articles
     process_each_article(
         input_file=input_path,
         output_dir=output_path,
         process_article_json_fn=process_article_generate_jsons,
     )
+############################################################################################################
+# Load environment variables
+#     load_dotenv('/hps/software/users/literature/textmining-ml/.env_paths')
+#
+#     ml_model_path = os.getenv('METAGENOMIC_MODEL_PATH_QUANTIZED')
+#     # primer_dictionary_path = BASE_DICTIONARY_PATH
+#     article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')
+#
+#     linker = EntityLinker()
+#     loaded_data = linker.load_annotations(['primer'])
+#
+#     if not ml_model_path:
+#         raise ValueError("Environment variable 'METAGENOMIC_MODEL_PATH_QUANTIZED' not found.")
+#
+#
+#     metagenomic_paths = [
+#         ml_model_path + '/' + f'metagenomic-set-{i}_quantised' for i in range(1, 6)
+#     ]
+#
+#     # Load all NER models
+#     try:
+#         ner_models = [load_ner_model(path, session_options) for path in metagenomic_paths]
+#         print("All NER models loaded successfully.")
+#     except Exception as e:
+#         raise RuntimeError(f"Error loading NER models: {str(e)}")
+#
+#     # Load all NER models
+#     try:
+#         load_artifacts(article_classifier_path)
+#         print("All article classifier models loaded successfully.")
+#     except Exception as e:
+#         raise RuntimeError(f"Error loading article classifier models: {str(e)}")
+#
+#
+#     parser = argparse.ArgumentParser(
+#         description='Process section-tagged XML files and output annotations in JSON format.')
+#     parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
+#     parser.add_argument('--output', help='Output directory for JSON files', required=True)
+#     # parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
+#
+#     args = parser.parse_args()
+#     input_path = args.input
+#     output_path = args.output
+#     # model_path_quantised = args.model_path
+#
+#     # Check that input is a file
+#     if not os.path.isfile(input_path):
+#         raise ValueError(f"Expected a file for input, but got: {input_path}")
+#
+#     # Check if output directory exists; if not, create it
+#     if not os.path.isdir(output_path):
+#         print(f"Output directory '{output_path}' does not exist. Creating it.")
+#         os.makedirs(output_path, exist_ok=True)
+#     #
+#     # Ensure 'no_matches' directory exists within the output directory
+#     no_match_dir = os.path.join(output_path, "no_matches")
+#     os.makedirs(no_match_dir, exist_ok=True)
+#     # no_match_file_path = os.path.join(no_match_dir, "patch_no_match.json")
+#     #
+#     process_each_article(
+#         input_file=input_path,
+#         output_dir=output_path,
+#         process_article_json_fn=process_article_generate_jsons,
+#     )
 
 
 

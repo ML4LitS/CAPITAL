@@ -128,6 +128,20 @@ def classify_abstract(abstract):
 
 
 
+# def get_word_position(sent_id, sentence_text, char_start):
+#     """
+#     Calculate the word position based on character start index.
+#     Returns a string in the format 'sent_id.word_position'.
+#     """
+#     words = sentence_text.split()
+#     current_char = 0
+#     for idx, word in enumerate(words):
+#         word_start = sentence_text.find(word, current_char)
+#         if word_start == char_start:
+#             return f"{sent_id}.{idx + 1}"
+#         current_char = word_start + len(word)
+#     return f"{sent_id}.0"  # Return 0 if position not found
+
 def get_word_position(sent_id, sentence_text, char_start):
     """
     Calculate the word position based on character start index.
@@ -137,57 +151,74 @@ def get_word_position(sent_id, sentence_text, char_start):
     current_char = 0
     for idx, word in enumerate(words):
         word_start = sentence_text.find(word, current_char)
-        if word_start == char_start:
+        word_end = word_start + len(word)
+        # If char_start falls within the boundaries of the word
+        if word_start <= char_start < word_end:
             return f"{sent_id}.{idx + 1}"
-        current_char = word_start + len(word)
-    return f"{sent_id}.0"  # Return 0 if position not found
+        current_char = word_end
+    return f"{sent_id}.0"
 
 
 def get_prefix_postfix(sentence_text, char_start, char_end, num_words=3, max_chars=30):
     """
-    Extract prefix and postfix based on word positions with constraints:
-    - If `num_words` is "ALL", prefix will include all words from the beginning of the sentence
-      to the target term, and postfix will include all words from the target term to the end of the sentence.
-    - Otherwise, returns up to `num_words` before and after the target term.
-    - Ensures each prefix and postfix does not exceed `max_chars` when `num_words` is not "ALL".
+    Extract prefix and postfix based on character boundaries around the entity,
+    while considering word limits and maximum character constraints.
     """
     words = sentence_text.split()
-    word_positions = [sentence_text.find(word) for word in words]
-
-    # Identify the word index for the starting character of the entity
+    current_char = 0
     word_index = None
-    for idx, start in enumerate(word_positions):
-        if start == char_start:
+    word_start = None
+    word_end = None
+
+    # Find the word that contains the entity based on char_start
+    for idx, word in enumerate(words):
+        word_start = sentence_text.find(word, current_char)
+        word_end = word_start + len(word)
+        if word_start <= char_start < word_end:
             word_index = idx
             break
+        current_char = word_end
 
     prefix, postfix = "", ""
     if word_index is not None:
+        # For prefix
         if num_words == "ALL":
-            # Extract all words from the start of the sentence to the target term
-            prefix = ' '.join(words[:word_index])
-
-            # Extract all words from the target term to the end of the sentence
-            postfix = ' '.join(words[word_index + 1:])
+            prefix = sentence_text[:char_start].rstrip()
         else:
-            # Extract prefix words up to `num_words` or `max_chars`
-            prefix_words = words[max(0, word_index - num_words):word_index]
-            prefix = ' '.join(prefix_words)
-            if len(prefix) > max_chars:
-                prefix = prefix[-max_chars:]  # Truncate to the last `max_chars` characters
+            # Determine how many words to include before the current word
+            start_idx = max(0, word_index - num_words)
+            # Extract whole words before the entity word
+            prefix_words = words[start_idx:word_index]
+            # Extract the partial segment of the current word before the entity
+            partial_before = sentence_text[word_start:char_start] if word_start < char_start else ""
+            # Combine and trim spaces
+            prefix_combined = ' '.join(prefix_words + [partial_before]).strip()
+            # Apply max_chars constraint if necessary
+            prefix = prefix_combined[-max_chars:] if len(prefix_combined) > max_chars else prefix_combined
 
-            # Extract postfix words up to `num_words` or `max_chars`
-            postfix_words = words[word_index + 1:word_index + 1 + num_words]
-            postfix = ' '.join(postfix_words)
-            if len(postfix) > max_chars:
-                postfix = postfix[:max_chars]  # Truncate to the first `max_chars` characters
+        # For postfix
+        if num_words == "ALL":
+            postfix = sentence_text[char_end:].lstrip()
+        else:
+            # Extract the partial segment of the current word after the entity
+            word_after = ""
+            if char_end < word_end:
+                word_after = sentence_text[char_end:word_end]
+            # Get the next num_words words after the current word
+            postfix_words = words[word_index+1:word_index+1+num_words]
+            # Combine partial word and subsequent words
+            parts = [word_after] if word_after else []
+            parts.extend(postfix_words)
+            postfix_combined = ' '.join(parts).strip()
+            # Apply max_chars constraint if necessary
+            postfix = postfix_combined[:max_chars] if len(postfix_combined) > max_chars else postfix_combined
 
     return prefix, postfix
 
 
 def extract_annotation(sentence_id, sentence_text, entity, section, provider):
-    if section.upper() == "OTHER":  # Skip sections labeled as "OTHER"
-        return None
+    # if section.upper() == "OTHER":  # Skip sections labeled as "OTHER"
+    #     return None
 
     term = sentence_text[entity['start']:entity['end']]
 
@@ -236,8 +267,8 @@ def batch_annotate_sentences(
     Returns:
         list: Annotated sentences.
     """
-    if section.upper() == "OTHER":  # Skip processing for "OTHER" sections
-        return []
+    # if section.upper() == "OTHER":  # Skip processing for "OTHER" sections
+    #     return []
 
     annotations = []
 
@@ -271,6 +302,80 @@ def batch_annotate_sentences(
                 annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
 
     return annotations
+
+def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
+    """
+    Formats output annotations into two JSON structures:
+    - 'match_json' for matched annotations
+    - 'non_match_json' for unmatched annotations
+    When PROVIDER is not "europepmc", uses a unified format with "src" and "id" fields.
+    """
+    # Separate annotations based on tags
+    match_annotations = []
+    non_match_annotations = []
+
+    for annotation in all_linked_annotations_:
+        # Check if the annotation is unmatched (name and uri are '#')
+        if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
+            non_match_annotations.append(annotation)
+        else:
+            match_annotations.append(annotation)
+
+    # Determine formatting based on provider
+    if PROVIDER.lower() != "europepmc":
+        # Use new unified format for providers other than "europepmc"
+        match_json = OrderedDict()
+        non_match_json = OrderedDict()
+
+        if pmcid:
+            match_json["src"] = "PMC"
+            non_match_json["src"] = "PMC"
+            match_json["id"] = pmcid
+            non_match_json["id"] = pmcid
+        elif ft_id:
+            # Adjust "src" label as needed for non-PMC IDs
+            match_json["src"] = "PPR"
+            non_match_json["src"] = "PPR"
+            match_json["id"] = ft_id
+            non_match_json["id"] = ft_id
+
+        match_json["provider"] = PROVIDER
+        match_json["anns"] = match_annotations
+
+        non_match_json["provider"] = PROVIDER
+        non_match_json["anns"] = non_match_annotations
+
+        return match_json, non_match_json
+
+    else:
+        # For "europepmc" provider, use the original formatting logic
+        match_json = OrderedDict()
+        non_match_json = OrderedDict()
+
+        match_annotations = []
+        non_match_annotations = []
+
+        for annotation in all_linked_annotations_:
+            if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
+                non_match_annotations.append(annotation)
+            else:
+                match_annotations.append(annotation)
+
+        if pmcid:
+            match_json["pmcid"] = pmcid
+            non_match_json["pmcid"] = pmcid
+        elif ft_id:
+            match_json["ft_id"] = ft_id
+            non_match_json["ft_id"] = ft_id
+
+        match_json["provider"] = PROVIDER
+        match_json["anns"] = match_annotations
+
+        non_match_json["provider"] = PROVIDER
+        non_match_json["anns"] = non_match_annotations
+
+        return match_json, non_match_json
+
 
 # def get_prefix_postfix(sentence_text, char_start, char_end, num_words=3, max_chars=30):
 #     """
@@ -380,43 +485,43 @@ def batch_annotate_sentences(
 #     return annotations
 
 
-def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
-    """
-    Formats output annotations into two JSON structures:
-    - 'match_json' for matched annotations
-    - 'non_match_json' for unmatched annotations
-    """
-    match_annotations = []
-    non_match_annotations = []
-
-    # Separate annotations based on tags
-    for annotation in all_linked_annotations_:
-        # Check if the annotation is unmatched (name and uri are '#')
-        if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
-            non_match_annotations.append(annotation)
-        else:
-            match_annotations.append(annotation)
-
-    # Construct final JSON outputs
-    match_json = OrderedDict()
-    non_match_json = OrderedDict()
-
-    # Add pmcid or ft_id to both match and non-match JSONs
-    if pmcid:
-        match_json["pmcid"] = pmcid
-        non_match_json["pmcid"] = pmcid
-    elif ft_id:
-        match_json["ft_id"] = ft_id
-        non_match_json["ft_id"] = ft_id
-
-    # Add provider and anns fields to each JSON
-    match_json["provider"] = PROVIDER
-    match_json["anns"] = match_annotations
-
-    non_match_json["provider"] = PROVIDER
-    non_match_json["anns"] = non_match_annotations
-
-    return match_json, non_match_json
+# def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
+#     """
+#     Formats output annotations into two JSON structures:
+#     - 'match_json' for matched annotations
+#     - 'non_match_json' for unmatched annotations
+#     """
+#     match_annotations = []
+#     non_match_annotations = []
+#
+#     # Separate annotations based on tags
+#     for annotation in all_linked_annotations_:
+#         # Check if the annotation is unmatched (name and uri are '#')
+#         if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
+#             non_match_annotations.append(annotation)
+#         else:
+#             match_annotations.append(annotation)
+#
+#     # Construct final JSON outputs
+#     match_json = OrderedDict()
+#     non_match_json = OrderedDict()
+#
+#     # Add pmcid or ft_id to both match and non-match JSONs
+#     if pmcid:
+#         match_json["pmcid"] = pmcid
+#         non_match_json["pmcid"] = pmcid
+#     elif ft_id:
+#         match_json["ft_id"] = ft_id
+#         non_match_json["ft_id"] = ft_id
+#
+#     # Add provider and anns fields to each JSON
+#     match_json["provider"] = PROVIDER
+#     match_json["anns"] = match_annotations
+#
+#     non_match_json["provider"] = PROVIDER
+#     non_match_json["anns"] = non_match_annotations
+#
+#     return match_json, non_match_json
 
 
 def modify_restricted_json(json_data, open_status):
