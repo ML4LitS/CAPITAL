@@ -6,6 +6,7 @@ from entity_linker import EntityLinker
 from entity_tagger import process_each_article, load_ner_model, batch_annotate_sentences, format_output_annotations, SECTIONS_MAP, extract_annotation
 import argparse
 import warnings
+import re
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -94,10 +95,17 @@ def process_article_generate_jsons(article_data):
         return None, None  # Skip article if no pmcid or ft_id
 
     if pmcid:
-        # If pmcid doesn't start with "PMC" and is purely numeric, prepend "PMC"
-        if not pmcid.startswith("PMC") and pmcid.isdigit():
-            pmcid = "PMC" + pmcid
+        # If pmcid starts with "PMC", case-insensitively extract only the digits
+        pmcid_match = re.search(r"(?i)PMC(\d+)", pmcid)  # (?i) makes the regex case-insensitive
+        if pmcid_match:
+            pmcid = pmcid_match.group(1)
+        # Check if pmcid is a still a valid numeric string
+        if not pmcid.isdigit():
+            # If not numeric, assign pmcid to ft_id and reset pmcid
+            ft_id = pmcid
+            pmcid = None
 
+    # print([pmcid, ft_id])
     all_annotations = []
 
     for section_key, sentences in article_data.get("sections", {}).items():
@@ -135,7 +143,7 @@ if __name__ == '__main__':
     session_options = ort.SessionOptions()
     session_options.intra_op_num_threads = 1  # Limit to a single thread
     session_options.inter_op_num_threads = 1  # Limit to a single thread
-
+    #
     parser = argparse.ArgumentParser(
         description='Process section-tagged XML files and output annotations in JSON format.')
     parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
@@ -177,7 +185,7 @@ if __name__ == '__main__':
     )
 
 ##################################################################################################################################
-    # # # Directly assign the paths
+    # # Directly assign the paths
     # input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-2025_01_14-24.jsonl.gz" # Replace with your actual input file path
     # output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/europepmc/"  # Replace with your actual output directory path
     # model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"  # Replace with your actual model directory path
