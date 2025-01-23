@@ -446,7 +446,9 @@ class EntityLinker:
             'GP': f"https://www.uniprot.org/uniprotkb/{ent_id}/entry",
             'DS': f"http://linkedlifedata.com/resource/umls-concept/{ent_id}",
             'OG': f"http://identifiers.org/taxonomy/{ent_id}",
-            'CD': f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId={ent_id}"
+            'CD': f"http://purl.obolibrary.org/obo/{ent_id}"
+            # 'CD': f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId={ent_id}"
+
         }
         return url_map.get(entity_group, "#")
 
