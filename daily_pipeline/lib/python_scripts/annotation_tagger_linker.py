@@ -143,7 +143,7 @@ if __name__ == '__main__':
     session_options = ort.SessionOptions()
     session_options.intra_op_num_threads = 1  # Limit to a single thread
     session_options.inter_op_num_threads = 1  # Limit to a single thread
-    #
+
     parser = argparse.ArgumentParser(
         description='Process section-tagged XML files and output annotations in JSON format.')
     parser.add_argument('--input', help='Input directory with XML or GZ files', required=True)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
         process_article_json_fn=process_article_generate_jsons,
     )
 
-##################################################################################################################################
+#################################################################################################################################
     # # Directly assign the paths
     # input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-2025_01_14-24.jsonl.gz" # Replace with your actual input file path
     # output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/fulltext/europepmc/"  # Replace with your actual output directory path
@@ -219,6 +219,6 @@ if __name__ == '__main__':
     #     process_article_json_fn=process_article_generate_jsons,
     # )
 
-#################################################################################################################
+################################################################################################################
 
 

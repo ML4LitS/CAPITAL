@@ -63,7 +63,9 @@ class EntityLinker:
             'GP': ('uniprot_terms.index', 'uniprot_terms.pkl'),
             'GO': ('go_terms.index', 'go_terms.pkl'),
             'EM': ('em_terms.index', 'em_terms.pkl'),
-            'primer': ('primer_terms.index', 'primer_terms.pkl')  # Ensure 'Primer' is correctly capitalized
+            'primer': ('primer_terms.index', 'primer_terms.pkl'),  # Ensure 'Primer' is correctly capitalized
+            'EFO': ('EFO_terms.index', 'EFO_terms.pkl'),
+            'ENVO': ('ENVO_terms.index', 'ENVO_terms.pkl')
         }
 
         # Define phrases to remove
@@ -441,13 +443,22 @@ class EntityLinker:
             return f"http://identifiers.org/{ent_id}"
         elif entity_group == 'primer':
             return f"http://probebase.csb.univie.ac.at/pb_report/probe/{ent_id}"
+
+        # Handling for EFO (Experimental Factor Ontology)
+        elif entity_group == 'EFO':
+            # Special case: Entities starting with BFO or IAO are handled in the same way
+            if ent_id.startswith(('EFO')):
+                return f"http://www.ebi.ac.uk/efo/EFO_{ent_id}"
+            else:
+                return f"http://purl.obolibrary.org/obo/{ent_id}"
+
         # Default mappings
         url_map = {
             'GP': f"https://www.uniprot.org/uniprotkb/{ent_id}/entry",
             'DS': f"http://linkedlifedata.com/resource/umls-concept/{ent_id}",
             'OG': f"http://identifiers.org/taxonomy/{ent_id}",
-            'CD': f"http://purl.obolibrary.org/obo/{ent_id}"
-            # 'CD': f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId={ent_id}"
+            'CD': f"http://purl.obolibrary.org/obo/{ent_id}",
+            'ENVO': f"http://purl.obolibrary.org/obo/{ent_id}"
 
         }
         return url_map.get(entity_group, "#")
