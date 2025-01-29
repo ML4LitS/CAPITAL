@@ -126,7 +126,67 @@ def classify_abstract(abstract):
     return class_label, predicted_probabilities.max()
 
 
+def batch_annotate_sentences(
+    sentences,
+    section,
+    ner_model,
+    extract_annotation_fn: Callable,
+    provider=None,  # Add provider parameter
+    batch_size=BATCH_SIZE_,
+    parallel=PARALLEL_
+):
+    """
+    Annotate sentences in batches.
 
+    Args:
+        sentences (list): List of sentences to process.
+        section (str): Section name to include in annotations.
+        ner_model (Callable): NER model or pipeline for extracting entities.
+        extract_annotation_fn (Callable): Function to extract annotations.
+        provider (str, optional): Provider name to pass to the annotation function (default: None).
+        batch_size (int): Number of sentences per batch (default: 4).
+        parallel (bool): Whether to process sentences in parallel (default: True).
+
+    Returns:
+        list: Annotated sentences.
+    """
+    # if section.upper() == "OTHER":  # Skip processing for "OTHER" sections
+    #     return []
+
+    annotations = []
+
+    def batch_sentences(iterable, n):
+        """Helper function to batch sentences into chunks of size n."""
+        it = iter(iterable)
+        while True:
+            batch = list(islice(it, n))
+            if not batch:
+                break
+            yield batch
+
+    if parallel:
+        # Process in batches
+        for sentence_batch in batch_sentences(sentences, n=batch_size):
+            batched_text = [s["text"] for s in sentence_batch]
+            ner_results = ner_model(batched_text)
+
+            for i, sentence_entities in enumerate(ner_results):
+                sentence_id = sentence_batch[i]["sent_id"]
+                sentence_text = sentence_batch[i]["text"]
+                for entity in sentence_entities:
+                    annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
+    else:
+        # Process sentences individually
+        for sentence in sentences:
+            ner_results = ner_model([sentence["text"]])[0]
+            sentence_id = sentence["sent_id"]
+            sentence_text = sentence["text"]
+            for entity in ner_results:
+                annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
+
+    return annotations
+
+###################################################################################################
 
 def get_word_position(sent_id, sentence_text, char_start):
     """
@@ -229,65 +289,7 @@ def extract_annotation(sentence_id, sentence_text, entity, section, provider):
         "postfix": postfix
     }
 
-def batch_annotate_sentences(
-    sentences,
-    section,
-    ner_model,
-    extract_annotation_fn: Callable,
-    provider=None,  # Add provider parameter
-    batch_size=BATCH_SIZE_,
-    parallel=PARALLEL_
-):
-    """
-    Annotate sentences in batches.
-
-    Args:
-        sentences (list): List of sentences to process.
-        section (str): Section name to include in annotations.
-        ner_model (Callable): NER model or pipeline for extracting entities.
-        extract_annotation_fn (Callable): Function to extract annotations.
-        provider (str, optional): Provider name to pass to the annotation function (default: None).
-        batch_size (int): Number of sentences per batch (default: 4).
-        parallel (bool): Whether to process sentences in parallel (default: True).
-
-    Returns:
-        list: Annotated sentences.
-    """
-    # if section.upper() == "OTHER":  # Skip processing for "OTHER" sections
-    #     return []
-
-    annotations = []
-
-    def batch_sentences(iterable, n):
-        """Helper function to batch sentences into chunks of size n."""
-        it = iter(iterable)
-        while True:
-            batch = list(islice(it, n))
-            if not batch:
-                break
-            yield batch
-
-    if parallel:
-        # Process in batches
-        for sentence_batch in batch_sentences(sentences, n=batch_size):
-            batched_text = [s["text"] for s in sentence_batch]
-            ner_results = ner_model(batched_text)
-
-            for i, sentence_entities in enumerate(ner_results):
-                sentence_id = sentence_batch[i]["sent_id"]
-                sentence_text = sentence_batch[i]["text"]
-                for entity in sentence_entities:
-                    annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
-    else:
-        # Process sentences individually
-        for sentence in sentences:
-            ner_results = ner_model([sentence["text"]])[0]
-            sentence_id = sentence["sent_id"]
-            sentence_text = sentence["text"]
-            for entity in ner_results:
-                annotations.append(extract_annotation_fn(sentence_id, sentence_text, entity, section, provider))
-
-    return annotations
+from collections import OrderedDict
 
 def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
     """
@@ -296,18 +298,30 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
     - 'non_match_json' for unmatched annotations
     When PROVIDER is not "europepmc", uses a unified format with "src" and "id" fields.
     """
-    # Separate annotations based on tags
+
+    # Prepare our matched/unmatched lists
     match_annotations = []
     non_match_annotations = []
 
     for annotation in all_linked_annotations_:
-        # Check if the annotation is unmatched (name and uri are '#')
-        if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
+        # Check conditions that qualify an annotation as "unmatched":
+        # 1) tag has "#" as name or ends with "#"
+        # 2) BOTH prefix and postfix are empty
+        tag_unmatched = (
+            annotation["tags"][0]["name"] == "#"
+            or annotation["tags"][0]["uri"].endswith("#")
+        )
+        no_context = (
+            annotation.get("prefix", "") == ""
+            and annotation.get("postfix", "") == ""
+        )
+
+        if tag_unmatched or no_context:
             non_match_annotations.append(annotation)
         else:
             match_annotations.append(annotation)
 
-    # Determine formatting based on provider
+    # Next, create the output JSON depending on the provider
     if PROVIDER.lower() != "europepmc":
         # Use new unified format for providers other than "europepmc"
         match_json = OrderedDict()
@@ -326,9 +340,9 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
             non_match_json["id"] = ft_id
 
         match_json["provider"] = PROVIDER
-        match_json["anns"] = match_annotations
-
         non_match_json["provider"] = PROVIDER
+
+        match_json["anns"] = match_annotations
         non_match_json["anns"] = non_match_annotations
 
         return match_json, non_match_json
@@ -338,15 +352,6 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
         match_json = OrderedDict()
         non_match_json = OrderedDict()
 
-        match_annotations = []
-        non_match_annotations = []
-
-        for annotation in all_linked_annotations_:
-            if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
-                non_match_annotations.append(annotation)
-            else:
-                match_annotations.append(annotation)
-
         if pmcid:
             match_json["pmcid"] = pmcid
             non_match_json["pmcid"] = pmcid
@@ -355,14 +360,88 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
             non_match_json["ft_id"] = ft_id
 
         match_json["provider"] = PROVIDER
-        match_json["anns"] = match_annotations
-
         non_match_json["provider"] = PROVIDER
+
+        match_json["anns"] = match_annotations
         non_match_json["anns"] = non_match_annotations
 
         return match_json, non_match_json
 
 
+# def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
+#     """
+#     Formats output annotations into two JSON structures:
+#     - 'match_json' for matched annotations
+#     - 'non_match_json' for unmatched annotations
+#     When PROVIDER is not "europepmc", uses a unified format with "src" and "id" fields.
+#     """
+#     # Separate annotations based on tags
+#     match_annotations = []
+#     non_match_annotations = []
+#
+#     for annotation in all_linked_annotations_:
+#         # Check if the annotation is unmatched (name and uri are '#')
+#         if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
+#             non_match_annotations.append(annotation)
+#         else:
+#             match_annotations.append(annotation)
+#
+#     # Determine formatting based on provider
+#     if PROVIDER.lower() != "europepmc":
+#         # Use new unified format for providers other than "europepmc"
+#         match_json = OrderedDict()
+#         non_match_json = OrderedDict()
+#
+#         if pmcid:
+#             match_json["src"] = "PMC"
+#             non_match_json["src"] = "PMC"
+#             match_json["id"] = pmcid
+#             non_match_json["id"] = pmcid
+#         elif ft_id:
+#             # Adjust "src" label as needed for non-PMC IDs
+#             match_json["src"] = "PPR"
+#             non_match_json["src"] = "PPR"
+#             match_json["id"] = ft_id
+#             non_match_json["id"] = ft_id
+#
+#         match_json["provider"] = PROVIDER
+#         match_json["anns"] = match_annotations
+#
+#         non_match_json["provider"] = PROVIDER
+#         non_match_json["anns"] = non_match_annotations
+#
+#         return match_json, non_match_json
+#
+#     else:
+#         # For "europepmc" provider, use the original formatting logic
+#         match_json = OrderedDict()
+#         non_match_json = OrderedDict()
+#
+#         match_annotations = []
+#         non_match_annotations = []
+#
+#         for annotation in all_linked_annotations_:
+#             if annotation["tags"][0]["name"] == "#" or annotation["tags"][0]["uri"].endswith("#"):
+#                 non_match_annotations.append(annotation)
+#             else:
+#                 match_annotations.append(annotation)
+#
+#         if pmcid:
+#             match_json["pmcid"] = pmcid
+#             non_match_json["pmcid"] = pmcid
+#         elif ft_id:
+#             match_json["ft_id"] = ft_id
+#             non_match_json["ft_id"] = ft_id
+#
+#         match_json["provider"] = PROVIDER
+#         match_json["anns"] = match_annotations
+#
+#         non_match_json["provider"] = PROVIDER
+#         non_match_json["anns"] = non_match_annotations
+#
+#         return match_json, non_match_json
+
+##########################################################################################
 def modify_restricted_json(json_data, open_status):
     """
     Modifies the JSON structure for restricted access:
