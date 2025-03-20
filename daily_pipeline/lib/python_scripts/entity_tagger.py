@@ -291,7 +291,7 @@ def extract_annotation(sentence_id, sentence_text, entity, section, provider):
 
 from collections import OrderedDict
 
-def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
+def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER, TYPES):
     """
     Formats output annotations into two JSON structures:
     - 'match_json' for matched annotations
@@ -332,6 +332,7 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
             non_match_json["src"] = "PMC"
             match_json["id"] = pmcid
             non_match_json["id"] = pmcid
+            non_match_json["types"] = TYPES
         elif ft_id:
             # Adjust "src" label as needed for non-PMC IDs
             match_json["src"] = "PPR"
@@ -341,6 +342,8 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
 
         match_json["provider"] = PROVIDER
         non_match_json["provider"] = PROVIDER
+        match_json["types"] = TYPES
+        non_match_json["types"] = TYPES
 
         match_json["anns"] = match_annotations
         non_match_json["anns"] = non_match_annotations
@@ -361,6 +364,9 @@ def format_output_annotations(all_linked_annotations_, pmcid, ft_id, PROVIDER):
 
         match_json["provider"] = PROVIDER
         non_match_json["provider"] = PROVIDER
+
+        match_json["types"] = TYPES
+        non_match_json["types"] = TYPES
 
         match_json["anns"] = match_annotations
         non_match_json["anns"] = non_match_annotations

@@ -1,0 +1,64 @@
+API,provider,entity_type,count
+Dictionary,Biostudies,Accession Numbers,17
+Dictionary,Biostudies,Chemicals,12
+Dictionary,Biostudies,Diseases,4
+Dictionary,Biostudies,Experimental Methods,5
+Dictionary,Biostudies,Gene Ontology,3
+Dictionary,Biostudies,Gene_Proteins,28
+Dictionary,Biostudies,Organisms,32
+Dictionary,Europe PMC,Accession Numbers,1546
+Dictionary,Europe PMC,Chemicals,27787
+Dictionary,Europe PMC,Diseases,11900
+Dictionary,Europe PMC,Experimental Methods,6249
+Dictionary,Europe PMC,Gene Ontology,13596
+Dictionary,Europe PMC,Gene_Proteins,19408
+Dictionary,Europe PMC,Organisms,52616
+Dictionary,Europe PMC,Resources,286
+Dictionary,Metagenomics,Body-Site,14
+Dictionary,Metagenomics,Date,2
+Dictionary,Metagenomics,Engineered,2
+Dictionary,Metagenomics,Gene,2
+Dictionary,Metagenomics,Host,23
+Dictionary,Metagenomics,Kit,1
+Dictionary,Metagenomics,LS,2
+Dictionary,Metagenomics,Place,5
+Dictionary,Metagenomics,Sample-Material,19
+Dictionary,Metagenomics,State,144
+Dictionary,Metagenomics,Treatment,34
+Dictionary,OntoGene,Organ Tissue,4
+Dictionary,OntoGene,Sequence,3
+Dictionary,Open Targets Platform,Gene Disease Relationship,1
+Dictionary,Open Targets Platform,Gene Drug Relationship,1
+ML,Biostudies,Accession Numbers,17
+ML,Biostudies,Chemicals,12
+ML,Biostudies,Diseases,4
+ML,Biostudies,Experimental Methods,5
+ML,Biostudies,Gene Ontology,3
+ML,Biostudies,Gene_Proteins,28
+ML,Biostudies,Organisms,32
+ML,Europe PMC,Chemicals,28297
+ML,Europe PMC,Diseases,13229
+ML,Europe PMC,Experimental Methods,4214
+ML,Europe PMC,Gene Ontology,11317
+ML,Europe PMC,Gene_Proteins,21305
+ML,Europe PMC,Organisms,62395
+ML,Metagenomics,Body-Site,11234
+ML,Metagenomics,Date,499
+ML,Metagenomics,Ecoregion,990
+ML,Metagenomics,Engineered,3413
+ML,Metagenomics,Gene,7716
+ML,Metagenomics,Host,13923
+ML,Metagenomics,Kit,385
+ML,Metagenomics,LCM,165
+ML,Metagenomics,LS,1362
+ML,Metagenomics,Place,5023
+ML,Metagenomics,Primer,690
+ML,Metagenomics,Sample-Material,10561
+ML,Metagenomics,Sequencing,1156
+ML,Metagenomics,Site,1687
+ML,Metagenomics,State,70018
+ML,Metagenomics,Treatment,22354
+ML,OntoGene,Organ Tissue,4
+ML,OntoGene,Sequence,3
+ML,Open Targets Platform,Gene Disease Relationship,1
+ML,Open Targets Platform,Gene Drug Relationship,1

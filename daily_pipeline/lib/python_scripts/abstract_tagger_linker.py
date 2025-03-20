@@ -12,9 +12,6 @@ from tqdm import tqdm
 import onnxruntime as ort
 from datetime import datetime
 
-
-PROVIDER = "europepmc"
-
 # Mapping from abbreviation to full form
 ENTITY_TYPE_MAP_1 = {
     "EM": "methods", #exp_methods
@@ -24,6 +21,9 @@ ENTITY_TYPE_MAP_1 = {
     "CD": "chemical",
     "OG": "organism"
 }
+
+PROVIDER = "europepmc"
+TYPES = list(ENTITY_TYPE_MAP_1.values())
 
 # Helper Functions
 def map_entity_type(abbrev, ENTITY_TYPE_MAP):
@@ -137,7 +137,7 @@ def generate_tags(all_annotations, entity_map, linker=None):
 
 
 
-def format_output_annotations(all_linked_annotations, ext_id, source, provider):
+def format_output_annotations(all_linked_annotations, ext_id, source, provider, types):
     """
     Formats output annotations into matched and unmatched JSON structures.
 
@@ -165,6 +165,7 @@ def format_output_annotations(all_linked_annotations, ext_id, source, provider):
         "src": source,
         "ext_id": ext_id,
         "provider": provider,
+        "types": types,
         "anns": match_annotations,
     }
 
@@ -172,6 +173,7 @@ def format_output_annotations(all_linked_annotations, ext_id, source, provider):
         "src": source,
         "ext_id": ext_id,
         "provider": provider,
+        "types": types,
         "anns": non_match_annotations,
     }
 
@@ -233,7 +235,9 @@ def process_and_save_articles(
             linked_annotations_p1,
             ext_id=article_data["ext_id"],
             source=article_data["source"],
-            provider="europepmc"
+            provider=PROVIDER,
+            types = TYPES
+
         )
 
         # Save results for PROVIDER_1
@@ -295,64 +299,20 @@ if __name__ == '__main__':
     session_options.inter_op_num_threads = 1
 
 # #####################################################################################################################
-#     # Define paths
-#     input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.abstract.gz"
-#     output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/abstracts"
-#
-#     input_basename = os.path.basename(input_path)
-#     output_fname = generate_output_basename(input_basename)
-#     output_file = os.path.join(output_path, f"{output_fname}.api.json")
-#
-#
-#
-#     # output_fname = os.path.basename(input_path).replace(".abstract.gz", "")
-#     # output_file = os.path.join(output_path, f"{output_fname}.json")
-#     model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"
-#     ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
-#
-#     # Check input file and output directory
-#     if not os.path.isfile(input_path):
-#         raise FileNotFoundError(f"Input file not found: {input_path}")
-#     if not os.path.isdir(output_path):
-#         print(f"Output directory '{output_path}' does not exist. Creating it.")
-#         os.makedirs(output_path, exist_ok=True)
-#
-#     # Load PROVIDER_1 (europepmc) NER model
-#     print("Loading PROVIDER_1 NER model.")
-#     ner_quantized = load_ner_model(model_path_quantised, session_options)
-#
-#     # Load EntityLinker with all required annotations, including primer
-#     print("Loading entity linker.")
-#     linker = EntityLinker()
-#     linker.load_annotations(['EM', 'DS', 'GP', 'GO', 'CD', 'OG'])
-#
-#     # Process and save articles
-#     print("Processing articles and saving results.")
-#     process_and_save_articles(
-#         files_list=read_file_blocks(input_path),
-#         ner_model=ner_quantized,
-#         extract_annotation_fn=extract_annotation,  # Assuming this is a method in EntityLinker
-#         output_filename=output_file,
-#         output_dir=output_path
-#     )
-#
-#     print("Processing completed.")
-
-#################################################################################################################
-    parser = argparse.ArgumentParser(description='Process abstract patch XML files and output jsonl api.')
-    parser.add_argument('--input', help='Input XML or GZ file path', required=True)
-    parser.add_argument('--output', help='Output JSONL file path', required=True)
-    parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
-    args = parser.parse_args()
-    #
-
-    input_path = args.input
-    output_path = args.output
-    model_path_quantised = args.model_path
+    # Define paths
+    input_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/notebooks/data/patch-28-10-2024-0.abstract.gz"
+    output_path = "/home/stirunag/work/github/CAPITAL/daily_pipeline/results/abstracts"
 
     input_basename = os.path.basename(input_path)
     output_fname = generate_output_basename(input_basename)
     output_file = os.path.join(output_path, f"{output_fname}.api.json")
+
+
+
+    # output_fname = os.path.basename(input_path).replace(".abstract.gz", "")
+    # output_file = os.path.join(output_path, f"{output_fname}.json")
+    model_path_quantised = "/home/stirunag/work/github/CAPITAL/model/europepmc"
+    ml_model_path = '/home/stirunag/work/github/CAPITAL/model/'
 
     # Check input file and output directory
     if not os.path.isfile(input_path):
@@ -363,7 +323,6 @@ if __name__ == '__main__':
 
     # Load PROVIDER_1 (europepmc) NER model
     print("Loading PROVIDER_1 NER model.")
-    # Define or import session_options before using
     ner_quantized = load_ner_model(model_path_quantised, session_options)
 
     # Load EntityLinker with all required annotations, including primer
@@ -376,12 +335,57 @@ if __name__ == '__main__':
     process_and_save_articles(
         files_list=read_file_blocks(input_path),
         ner_model=ner_quantized,
-        extract_annotation_fn=extract_annotation,  # Correctly reference the method
+        extract_annotation_fn=extract_annotation,  # Assuming this is a method in EntityLinker
         output_filename=output_file,
         output_dir=output_path
     )
 
     print("Processing completed.")
+
+#################################################################################################################
+    # parser = argparse.ArgumentParser(description='Process abstract patch XML files and output jsonl api.')
+    # parser.add_argument('--input', help='Input XML or GZ file path', required=True)
+    # parser.add_argument('--output', help='Output JSONL file path', required=True)
+    # parser.add_argument('--model_path', help='Path to the quantized model directory', required=True)
+    # args = parser.parse_args()
+    # #
+    #
+    # input_path = args.input
+    # output_path = args.output
+    # model_path_quantised = args.model_path
+    #
+    # input_basename = os.path.basename(input_path)
+    # output_fname = generate_output_basename(input_basename)
+    # output_file = os.path.join(output_path, f"{output_fname}.api.json")
+    #
+    # # Check input file and output directory
+    # if not os.path.isfile(input_path):
+    #     raise FileNotFoundError(f"Input file not found: {input_path}")
+    # if not os.path.isdir(output_path):
+    #     print(f"Output directory '{output_path}' does not exist. Creating it.")
+    #     os.makedirs(output_path, exist_ok=True)
+    #
+    # # Load PROVIDER_1 (europepmc) NER model
+    # print("Loading PROVIDER_1 NER model.")
+    # # Define or import session_options before using
+    # ner_quantized = load_ner_model(model_path_quantised, session_options)
+    #
+    # # Load EntityLinker with all required annotations, including primer
+    # print("Loading entity linker.")
+    # linker = EntityLinker()
+    # linker.load_annotations(['EM', 'DS', 'GP', 'GO', 'CD', 'OG'])
+    #
+    # # Process and save articles
+    # print("Processing articles and saving results.")
+    # process_and_save_articles(
+    #     files_list=read_file_blocks(input_path),
+    #     ner_model=ner_quantized,
+    #     extract_annotation_fn=extract_annotation,  # Correctly reference the method
+    #     output_filename=output_file,
+    #     output_dir=output_path
+    # )
+    #
+    # print("Processing completed.")
 
 
 

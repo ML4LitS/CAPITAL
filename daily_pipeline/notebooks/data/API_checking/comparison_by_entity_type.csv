@@ -1,0 +1,36 @@
+provider,entity_type,Dictionary,ML,pct_diff
+Biostudies,Accession Numbers,17.0,17.0,0.0
+Biostudies,Chemicals,12.0,12.0,0.0
+Biostudies,Diseases,4.0,4.0,0.0
+Biostudies,Experimental Methods,5.0,5.0,0.0
+Biostudies,Gene Ontology,3.0,3.0,0.0
+Biostudies,Gene_Proteins,28.0,28.0,0.0
+Biostudies,Organisms,32.0,32.0,0.0
+Europe PMC,Accession Numbers,1546.0,0.0,-100.0
+Europe PMC,Chemicals,27787.0,28297.0,1.835390650304099
+Europe PMC,Diseases,11900.0,13229.0,11.168067226890756
+Europe PMC,Experimental Methods,6249.0,4214.0,-32.56521043366939
+Europe PMC,Gene Ontology,13596.0,11317.0,-16.76228302441895
+Europe PMC,Gene_Proteins,19408.0,21305.0,9.774319868095631
+Europe PMC,Organisms,52616.0,62395.0,18.585601337996046
+Europe PMC,Resources,286.0,0.0,-100.0
+Metagenomics,Body-Site,14.0,11234.0,80142.85714285714
+Metagenomics,Date,2.0,499.0,24850.0
+Metagenomics,Ecoregion,0.0,990.0,
+Metagenomics,Engineered,2.0,3413.0,170550.0
+Metagenomics,Gene,2.0,7716.0,385700.0
+Metagenomics,Host,23.0,13923.0,60434.78260869565
+Metagenomics,Kit,1.0,385.0,38400.0
+Metagenomics,LCM,0.0,165.0,
+Metagenomics,LS,2.0,1362.0,68000.0
+Metagenomics,Place,5.0,5023.0,100360.0
+Metagenomics,Primer,0.0,690.0,
+Metagenomics,Sample-Material,19.0,10561.0,55484.210526315794
+Metagenomics,Sequencing,0.0,1156.0,
+Metagenomics,Site,0.0,1687.0,
+Metagenomics,State,144.0,70018.0,48523.61111111111
+Metagenomics,Treatment,34.0,22354.0,65647.05882352941
+OntoGene,Organ Tissue,4.0,4.0,0.0
+OntoGene,Sequence,3.0,3.0,0.0
+Open Targets Platform,Gene Disease Relationship,1.0,1.0,0.0
+Open Targets Platform,Gene Drug Relationship,1.0,1.0,0.0
