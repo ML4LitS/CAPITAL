@@ -297,7 +297,8 @@ def generate_tags(all_annotations, linker=None, use_map_terms=False, batch_size=
 
         # Append processed annotation
         output_annotations.append({
-            "type": entity_type,
+            # "type": entity_type,
+            "type": entity_type.upper() if entity_type in {"ls", "lcm"} else entity_type,
             "position": annotation["position"],
             "prefix": annotation["prefix"],
             "exact": term,
@@ -404,7 +405,7 @@ if __name__ == '__main__':
     article_classifier_path = os.getenv('ARTICLE_CLASSIFIER_PATH')
 
     linker = EntityLinker()
-    loaded_data = linker.load_annotations(['primer' 'GP', 'DS', 'OG', 'CD', 'EFO', 'ENVO', 'EM', 'GO'])
+    loaded_data = linker.load_annotations(['primer', 'GP', 'DS', 'OG', 'CD', 'EFO', 'ENVO', 'EM', 'GO'])
 
     if not ml_model_path:
         raise ValueError("Environment variable 'METAGENOMIC_MODEL_PATH_QUANTIZED' not found.")
